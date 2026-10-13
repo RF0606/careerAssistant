@@ -1,0 +1,165 @@
+{
+  "version": "0.1.5",
+  "files": {
+    ".gitattributes": {
+      "sha256": "c18a2d17cc6f71c9b5c0b3d45f87eb903e18e2f8afc517f2f6f4ad7f3880e10d",
+      "bytes": 90
+    },
+    ".gitignore": {
+      "sha256": "ba1723397e058fef0a6bec2ea46aa2712c529febcd017d81ae670216b2b7d836",
+      "bytes": 907
+    },
+    "AGENTS.md": {
+      "sha256": "83e1f6fb92e6c0a51471362e2e7978c76c99feadb9754290f9b969b4ad14c59b",
+      "bytes": 1658
+    },
+    "CLAUDE.md": {
+      "sha256": "109851833d14b2c8fa950e39c7cbf496b3cc1c4243fca7fd45d9e2e7c2378ba9",
+      "bytes": 837
+    },
+    "LICENSE": {
+      "sha256": "7673a1c308ec887caa8673e5e17848d6e0283c1f95ef9ec094a8c916de7db4ac",
+      "bytes": 1086
+    },
+    "README.md": {
+      "sha256": "cf5483a0a6d4f3aba1835ca0c2e9173c4aac6de01a8878db51fd6a82b5a9e18f",
+      "bytes": 11313
+    },
+    "START_HERE_CODEX.md": {
+      "sha256": "d997cf6abc5579a41dd52032f46105dac4e6fd1cd0d83d9c736bb9adfef8520e",
+      "bytes": 5179
+    },
+    "VERSION": {
+      "sha256": "800cf1c0392b24de7c0a1c6ea6778ecb433dec71c49a150bce96a98477527b2f",
+      "bytes": 6
+    },
+    "install.py": {
+      "sha256": "743e1093b576ef6b53929050d8ae43550b3e563c304fa257d06ea1efc81ced53",
+      "bytes": 3596
+    },
+    "package-lock.json": {
+      "sha256": "933ab923a69f7b9fcb70863badec6d63b75a7858e67e0dc4426b47b607263d86",
+      "bytes": 1246
+    },
+    "package.json": {
+      "sha256": "e3afc4a8632e3209f8d4879cc8cea6578520725cb72e039e06800a2bf43dd348",
+      "bytes": 327
+    },
+    "release.py": {
+      "sha256": "09224880c06c79b4ad4522d625b255fbcd997349213d7efdf0c6c6d6aca8723b",
+      "bytes": 6603
+    },
+    "requirements.txt": {
+      "sha256": "f15dcecb86a1c90983c1c0e7ff8136ac6fa01436f030168516b97478c181f057",
+      "bytes": 29
+    },
+    "docs/CODEX_SETUP.md": {
+      "sha256": "1c7c96e8b02f6e5f11e3730c644bb9f6c14401cc3e969a2c8c5e2feb986540e9",
+      "bytes": 3622
+    },
+    "docs/VALIDATION.md": {
+      "sha256": "e0a3011b742e38c3811747ff97774d97a03746583447b031af06362b8acf055e",
+      "bytes": 17001
+    },
+    "examples/README.md": {
+      "sha256": "3d482ccb3145d4c71e86c181b40e6e2d7359ceb14f96eff4af66b757e32d4624",
+      "bytes": 660
+    },
+    "skills/career-assistant/agents/openai.yaml": {
+      "sha256": "56e2acf259bcabdbc3ccc022d27c70dcb8384c5b01903ea95b54be0df46a3e11",
+      "bytes": 259
+    },
+    "skills/career-assistant/assets/resume-template.tex": {
+      "sha256": "0fb02c175f5366a5f687fd65fd911f3b11ece8111cc273f000b25bf828591915",
+      "bytes": 1675
+    },
+    "skills/career-assistant/references/applications.md": {
+      "sha256": "414f0be80ad3b0f5206ceef259871bb8ef099f60f3a8e788c10e00a193c68697",
+      "bytes": 3937
+    },
+    "skills/career-assistant/references/data-interface.md": {
+      "sha256": "a2ad0890fdf8a63795d4f0f75813f768bec41ad84d2fc4fd6de4e73975bf5819",
+      "bytes": 7090
+    },
+    "skills/career-assistant/references/matching.md": {
+      "sha256": "2ac67d01892b3bd91a37ca335fc24a7f2004f48c34a7ad846df226271d274001",
+      "bytes": 2270
+    },
+    "skills/career-assistant/references/onboarding.md": {
+      "sha256": "0f78418302e513eaefa8bb1890e2c74a10796be85c35f11be69a6e80a2fbcd03",
+      "bytes": 5461
+    },
+    "skills/career-assistant/references/platforms.md": {
+      "sha256": "b9db4b41f899741331ffd988848b5ce61c6ab82bc06d9e7510fd1ca369e9372a",
+      "bytes": 1922
+    },
+    "skills/career-assistant/references/resume.md": {
+      "sha256": "d8d9cb92d8c09bff4cfee34d8eaaed5c256ecea3e0e24e2c28f62b5df9ca9e65",
+      "bytes": 2869
+    },
+    "skills/career-assistant/references/setup.md": {
+      "sha256": "c37008c30d3e6d0e6779da30fe0d8d6f08cf205443ce26d546d6860a27d2c6ae",
+      "bytes": 2483
+    },
+    "skills/career-assistant/references/workday-login.md": {
+      "sha256": "eff122c4d81fd844717f2a7fdd3b86b43dd39e05f1cea5406a888e6432a1bc96",
+      "bytes": 2993
+    },
+    "skills/career-assistant/scripts/career.py": {
+      "sha256": "6b8c31b65bef0fec798a42e85bfba85b442571087b5c41cc5f8aa8719907c776",
+      "bytes": 4569
+    },
+    "skills/career-assistant/scripts/jobs.py": {
+      "sha256": "ec58432a2fcfedde91c10ef8182cc626255c08abfdb4164ab50d626ffd4c2947",
+      "bytes": 14120
+    },
+    "skills/career-assistant/scripts/local_credentials.mjs": {
+      "sha256": "40fbe2b134e6126a1aee7f5b4c280cff17a3cab5a1de4e45e34516607c3e3aef",
+      "bytes": 5049
+    },
+    "skills/career-assistant/scripts/profiles.py": {
+      "sha256": "59ee971a8fe67b4013b8a1510bc2ca850003aaf1f038312ec3926dae6734ce9c",
+      "bytes": 13363
+    },
+    "skills/career-assistant/scripts/resume.py": {
+      "sha256": "400d8bf30284f2317bdc14888fdfbf85f8d285138e548d31d29f12c98da9828f",
+      "bytes": 10063
+    },
+    "skills/career-assistant/scripts/storage.py": {
+      "sha256": "2d4f6f446b5c87dc33ed65194e7c297be31356fa9850c9fa1e95e7fe844aecfb",
+      "bytes": 5700
+    },
+    "skills/career-assistant/SKILL.md": {
+      "sha256": "42026b1e1c166e71ec95ee890d648126236fe228311859db774e1087f3ac5dfc",
+      "bytes": 5012
+    },
+    "tests/browser_bridge.py": {
+      "sha256": "a5095006486bc904af5ad547b99b5ded0c8448e4c5ea695d2b9cac50a893b36d",
+      "bytes": 619
+    },
+    "tests/browser_smoke.mjs": {
+      "sha256": "be2b90eb58d8e4bd09a7dc5200714dddb907b0d04e5047f8166259b586e109a3",
+      "bytes": 11602
+    },
+    "tests/fixtures.py": {
+      "sha256": "c6cb40f9365f1ce5687d37b039d814a43aee0d8879294fcc5415e9ad61274724",
+      "bytes": 6803
+    },
+    "tests/host_smoke.py": {
+      "sha256": "0ac8cdb66ab98fa8e4d79d7ba090ca36995d6422ca3504732bf23ec380799169",
+      "bytes": 11966
+    },
+    "tests/mock_server.py": {
+      "sha256": "ed7088e4a79bffe86ba5dbe7351df989efbe206c8f1298fea141c305b399b92a",
+      "bytes": 2965
+    },
+    "tests/test_release.py": {
+      "sha256": "400b378ec259bf410b1d8b0ef55417663de4ac296da7b21883600da3452c6e2d",
+      "bytes": 4007
+    },
+    "tests/test_workflow.py": {
+      "sha256": "6318a109b1908ad45d7588a954aa76b5763c2568f4692917a817b7f1fffe0e5e",
+      "bytes": 23385
+    }
+  }
+}

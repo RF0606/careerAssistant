@@ -1,0 +1,62 @@
+# User knowledge, local host installations/settings and backups, at any depth
+.career-assistant/
+.agents/
+.claude/
+.codex/
+.credentials/
+.secrets/
+credentials/
+skill-backups/
+
+# Browser profiles, authentication/session state and recorded traffic
+browser/
+browser-data/
+storage-state*.json
+storage_state*.json
+cookies*.json
+*.har
+
+# Generated deliverables and private acceptance evidence
+outputs/
+output/
+dist/
+build/
+tmp/
+temp/
+test-results/
+playwright-report/
+coverage/
+*.log
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.zip
+
+# Dependencies, virtual environments and interpreter/tool caches
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.tox/
+.nox/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Local environment secrets (only deliberate placeholder examples may be tracked)
+.env
+.env.*
+*.env
+!.env.example
+
+# Machine-specific editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

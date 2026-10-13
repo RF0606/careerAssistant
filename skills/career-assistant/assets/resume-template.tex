@@ -1,0 +1,63 @@
+% One-page English resume. Layout slots are filled by scripts/resume.py.
+\documentclass[letterpaper,10pt]{article}
+
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage[english]{babel}
+\ifdefined\pdfgentounicode
+\input{glyphtounicode}
+\pdfgentounicode=1
+\fi
+
+\usepackage{CormorantGaramond}
+\usepackage{charter}
+
+\definecolor{airforceblue}{rgb}{0.36, 0.54, 0.66}
+
+\addtolength{\oddsidemargin}{-0.6in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1.19in}
+\addtolength{\topmargin}{-.74in}
+\addtolength{\textheight}{1.50in}
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+\titleformat{\section}{%
+  \vspace{-4pt}\scshape\raggedright\large\bfseries
+}{}{0em}{}[\color{black}\titlerule \vspace{-4pt}]
+
+\newcommand{\resumeItem}[1]{\item\small{#1 \vspace{-2pt}}}
+\newcommand{\resumeSubheading}[4]{%
+  \vspace{-1pt}\item
+    \begin{tabular*}{0.98\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{#3} & \textit{#4} \\
+    \end{tabular*}\vspace{-4pt}
+}
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.0in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}[leftmargin=0.15in]}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-2pt}}
+
+\renewcommand\labelitemi{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\begin{document}
+@@HEADER@@
+\section{Summary}
+\small{@@SUMMARY@@}
+\vspace{-5pt}
+\section{Skills}
+\small{@@SKILLS@@}
+\vspace{-5pt}
+\section{Work Experience}
+@@EXPERIENCE@@
+@@PROJECTS@@
+\section{Education}
+@@EDUCATION@@
+\end{document}

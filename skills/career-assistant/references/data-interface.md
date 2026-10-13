@@ -1,0 +1,118 @@
+# Local helper interface (schema 1, rubric 1.0)
+
+Resolve `career.py` relative to this skill. All commands accept a leading
+`--workspace <path>`; the current directory is the default. JSON input files belong
+inside the user's private folder. Helpers print non-secret results; never use
+profile inputs to hold passwords or sensitive identity numbers.
+
+```text
+python <skill>/scripts/career.py --workspace <root> init
+python <skill>/scripts/career.py --workspace <root> import-source <file> --kind document
+python <skill>/scripts/career.py --workspace <root> profile-update --input <private-json>
+python <skill>/scripts/career.py --workspace <root> preferences-update --input <private-json>
+python <skill>/scripts/career.py --workspace <root> checkpoint <stage> --note <brief-note>
+python <skill>/scripts/career.py --workspace <root> role-create --input <private-json> --host both
+python <skill>/scripts/career.py --workspace <root> assess --input <private-json>
+python <skill>/scripts/career.py --workspace <root> render <job-id> --input <private-draft-json>
+python <skill>/scripts/career.py --workspace <root> visual-review <job-id> --input <private-review-json>
+```
+
+## Sources and facts
+
+Import returns a generated source_id. Profile update shape:
+
+```json
+{"facts":{"name":{"text":"A fictional example name","category":"identity","status":"user_confirmed","source_ids":["source-id-returned-by-import"],"confirmation":"Actual user confirmation wording"}}}
+```
+
+Statuses: documented, user_confirmed, estimated, unconfirmed. IDs use lowercase ASCII
+letters/digits/hyphens, at most 64 characters. Correcting confirmed facts needs
+top-level change_confirmation. Updates merge into existing facts, never replace
+the entire profile. Source content is stored separately with hashes and import time.
+
+## Preferences and roles
+
+Preferences-update accepts a partial object with only known keys:
+targets (ordered objects/strings), locations, work_authorization, compensation,
+work_modes, commute, contracts, travel, start_date, exclusions, include_projects
+(boolean, default false), submission_policy (per-application or per-batch, initially null).
+Unknown preferences remain null/empty. The host records the user's actual choice.
+
+Role-create requires id, title and a nonempty focus list for any user-selected
+direction. Optional tailoring_guidance is a list of direction-specific writing
+priorities derived by the host from that user's facts and full JDs. Optional
+jd_source_ids link to imported JD sources. No linked JD means provisional true.
+There is no fixed direction enum or bundled role guide. Legacy route fields are
+accepted but ignored; existing schema-1 role files remain readable. The direction
+must match a user-selected ID or title in preferences.targets. After that selection,
+role-create writes routes/<id>.md inside `.career-assistant`, stores its relative
+route_path and route_sha256 in the role config, and creates each requested host's
+personal skill pointing to the guide. It never writes user routes into the shared
+installed skill. Init/install alone create no routes. Regenerate an old personal
+skill with role-create from its selected config if it has no private guide.
+Generated skills read the current private route, preferences and facts; guidance
+does not serve as factual evidence or grant submission permission.
+
+## Assessment
+
+Input has job, requirements, eligibility, preference_matches:
+
+```json
+{
+  "job":{"id":"example-job","company":"Fictional employer","title":"Example role","role_id":"chosen-role","url":"https://example.invalid/jobs/123","captured_at":"2026-01-01T00:00:00Z","full_jd":true,"text":"The full captured JD, not a title or invented summary."},
+  "requirements":[{"requirement":"A real JD requirement","must_have":true,"match":"direct","evidence_ids":["confirmed-fact-id"],"rationale":"Explain actual evidence","keywords":["exact supported JD term"]}],
+  "eligibility":[{"criterion":"Required work authorization","result":"yes","reason":"Explain the confirmed fact and JD requirement"}],
+  "preference_matches":[{"criterion":"Work mode","result":"unknown","reason":"Posting does not specify"}]
+}
+```
+
+No direct match without usable evidence IDs. Eligibility/preference results are
+yes/no/unknown. Full JD is required for scores. The host is responsible for truthful
+mapping and full capture; scripts cannot independently certify a webpage.
+
+## Draft and PDF review
+
+Every claim is `{ "text": "...", "evidence_ids": ["fact-id"] }`.
+Draft fields: evidence_review, header.name, optional header.headline, header.contacts,
+summary, skills (label + items of claims), experience, education. Entries contain
+organization, dates, title, optional location (all claims), optional bullets (claims).
+Optional projects use the same entry shape. include_projects true requires either
+the saved preference or project_section_request for this one resume. The generated
+section goes below Work Experience and above Education. Actual fictional examples
+are generated by tests/fixtures.py; never copy their facts into real profiles.
+
+Visual-review input: passed true, reviewer and notes, after actually opening all
+previews and checking extracted text. Renderer stores source/PDF hashes, page count,
+sections and bounds; status stays needs-visual-review until that observation.
+
+## Application lifecycle
+
+```text
+career.py application-add <job-id>
+career.py grant --input <grant-json>
+career.py prepare <application-id> --input <review-json>
+career.py begin-submit <application-id>
+career.py outcome <application-id> --input <observation-json>
+```
+
+Grant JSON: job_ids, max_submissions, user_request (actual human request).
+Prepare JSON: grant_id, all_required_fields_reviewed true, unresolved_fields [],
+review_evidence, answers [{field,value,fact_ids,high_impact}]. User-confirmed evidence
+is required for high-impact answers. Browser controls, attachment and all required
+questions must be inspected even if answers is empty for a simple form.
+
+Begin-submit persists an unknown attempt before the host clicks once. Outcome
+JSON: result confirmed/failed/unknown/needs-user, detail, next_action. Include the
+latest attempt_id returned by prepare/begin-submit whenever an attempt exists;
+late observations for older attempts are rejected. A needs-user observation before
+clicking pauses preparation; review and prepare again after resolving the blocker.
+Unknown is only valid after begin-submit. Confirmed
+additionally requires observed_confirmation true, confirmation_text, confirmation_url,
+evidence_path relative to `.career-assistant`. Evidence must already exist and be
+nonempty. After an uncertain click, failed requires verified_not_submitted true
+based on actual observations. Do not fabricate evidence files from a desired result.
+
+Tracker statuses are Pending, Needs user, Blocked, Submitted. The root records count
+matches the list length. Writes use an exclusive lock and atomic replacement. A
+stale lock is not automatically stolen: inspect processes and the last attempt
+before manually removing it. Unknown schema versions are preserved and rejected.
