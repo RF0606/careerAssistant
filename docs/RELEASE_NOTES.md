@@ -13,6 +13,12 @@ fictional browser scenarios and verifies public bundle contents. Version tags ru
 the same checks before publishing the ZIP, startup guide and SHA-256 files.
 Current and historical acceptance records are separated for easier review.
 
+Validation: 95 Python tests passed in each of five hosted OS/Python combinations,
+21 fictional browser scenarios passed, clean extraction and both generic skill
+installations passed, and two real one-page PDFs were visually checked. The first
+CI's four distribution files matched the corresponding local build byte for byte;
+the tag workflow repeats checks before publishing this version.
+
 This remains a development preview. Previous Codex conversation and supervised
 local browser evidence is retained; this release's maintenance checks are helper
 tests. Claude Code conversations remain deferred, macOS desktop conversations

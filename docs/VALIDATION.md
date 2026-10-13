@@ -11,10 +11,10 @@ No real user profile, credential, private route or personal skill is bundled.
 |---|---|
 | Local profile, preferences, onboarding and role skill lifecycle | Fictional Python helper tests; previously observed Codex conversation evidence retained in history |
 | Private backup, restore, history and schema 1→2 migration | Local fictional regression suite; credential/browser exclusion, newer application history, stale plans, tampering, interruption and rollback covered |
-| Python portability | 95 tests passed locally on Windows Python 3.13.1; GitHub's Linux/Windows 3.10/3.13 and macOS 3.13 matrix awaiting first run |
+| Python portability | 95 tests passed locally and in all five hosted combinations: Linux/Windows 3.10/3.13 and macOS 3.13 |
 | Browser/application guards | 21 automated scenarios passed again locally; earlier actual Codex IAB mock evidence retained |
 | PDF | Two real Tectonic PDFs passed one-page Letter, extraction/bounds and visual review; default Projects absent and requested Projects order correct |
-| Public bundle/Release | Pinned read-only CI and gated prerelease workflow added; cloud execution and final ZIP checks pending |
+| Public bundle/Release | First CI's 61-file public bundle verified; all four cloud/local assets byte-identical. Version tags repeat CI before gated prerelease publication |
 | Actual Codex conversations | Earlier initialize/facts/resume/role creation and invocation passed; no new maintenance conversation acceptance run |
 | Actual Codex browser | Earlier local login/upload/confirmed and unknown-result recovery passed; no live employer application |
 | Claude Code | Actual conversations deferred by owner; earlier OAuth 401 unresolved |
@@ -58,6 +58,28 @@ A real-PDF private backup restored into a third empty fictional workspace with
 identical facts and PDF bytes, no grants, and both personal host skills successfully
 regenerated. Skill frontmatter validation and workflow YAML syntax checks passed.
 
+## Executed acceptance
+
+- Windows Python 3.13.1: **95 tests passed**; clean extracted ZIP plus both generic
+  host installations also passed **95 tests**. Both local source and extracted
+  bundle passed **21 mock browser scenarios**. Core requires only the standard
+  library; PDF acceptance used the available local Tectonic/PyMuPDF runtime.
+- [First complete GitHub CI run](https://github.com/RF0606/careerAssistant/actions/runs/38433713858)
+  at source commit `8010b5571162d5b7417177016f0551a94bf3c6c5` passed every job:
+  **95 tests each** on Ubuntu Python 3.10/3.13, Windows Python 3.10/3.13 and macOS
+  Python 3.13, **21 browser scenarios**, and independently verified public bundling.
+- Downloaded the CI distribution artifact and compared all four files byte for
+  byte with the corresponding local build; ZIP, checksum, startup text and
+  aggregate checksums matched. The ZIP contains exactly 60 allowlisted source
+  files plus the manifest. It contains no local profile, routes, personal skills,
+  private backups, credentials or test-results.
+
+This record describes pre-publication source acceptance. Final tagged runs and
+published assets can be inspected in
+[Actions](https://github.com/RF0606/careerAssistant/actions) and
+[Releases](https://github.com/RF0606/careerAssistant/releases); the tag workflow
+rechecks the exact final commit, including documentation and manifest updates.
+
 ## Publishing automation
 
 CI checks the public manifest against actual tracked paths, runs five Python
@@ -69,5 +91,6 @@ limited to the publication job. No model/Workday secrets are used and no private
 test evidence is uploaded. See [RELEASING.md](RELEASING.md).
 
 Private acceptance artifacts for this release belong under
-`test-results/v0.1.8-maintenance-release/`. Update this record with actual local and
-cloud results before tagging; do not replace an unverified row with assumptions.
+`test-results/v0.1.8-maintenance-release/`; no private logs or test workspaces are
+published. Hosted macOS helper/cold-start success is new evidence, and does not
+replace the still-unverified macOS desktop conversation or live ATS acceptance.

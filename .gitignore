@@ -60,3 +60,6 @@ venv/
 .DS_Store
 Thumbs.db
 desktop.ini
+/.career-assistant/
+/.agents/skills/career-resume-*/
+/.claude/skills/career-resume-*/

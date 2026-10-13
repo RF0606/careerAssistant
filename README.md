@@ -13,13 +13,15 @@ skills，由用户下载后在自己的本地工作区逐步完善；这些内�
 实际初始化、事实保存、续接、私人 routes/skill 生成调用和一页 PDF 试跑已通过。
 已有 Windows/Linux 普通权限冷启动验证，以及 Codex 内置浏览器中的模拟登录、上传、
 授权提交、确认回写和不确定结果续接。本版加入本地备份、恢复、修改记录和数据迁移，
-以及三系统 CI 和版本预览发布流程。macOS 桌面宿主尚未实机验证；Claude Code 暂缓，
+以及三系统 CI 和版本预览发布流程。95 项核心测试已在五组云端系统/Python 组合通过，
+21 个模拟浏览器场景也已通过；macOS 桌面宿主尚未实机验证。Claude Code 暂缓，
 此前 OAuth 401 尚未处理。真实 Workday 等网站仍须在用户自己的环境核实。
 详细证据和复测步骤见 [验收记录](docs/VALIDATION.md)。
 
 ## 下载后的第一步 / Start here
 
 源码仓库：[RF0606/careerAssistant](https://github.com/RF0606/careerAssistant)，默认分支为 `master`。
+版本包、启动说明和校验值在 [GitHub Releases](https://github.com/RF0606/careerAssistant/releases)。
 
 1. 在 GitHub 点击 **Code → Download ZIP** 并解压，或 clone 仓库。打开包含本 README 的项目根目录。
 2. 在 **Codex** 中把这个文件夹添加为项目；或在 **Claude Code** 中进入这个目录开始会话。
