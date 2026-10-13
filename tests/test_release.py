@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import unittest
 import uuid
+import os
 from unittest.mock import patch
 from zipfile import ZipFile
 
@@ -69,6 +70,21 @@ class ReleaseTests(unittest.TestCase):
             stream.write('\nChanged\n')
         with self.assertRaises(ValueError):
             releaser.pack(self.root/'outputs/changed.zip')
+
+    def test_zip_is_reproducible_after_file_timestamps_change(self):
+        releaser.manifest()
+        first = self.root/'first/career-assistant.zip'; releaser.pack(first)
+        for path in releaser.public_files(): os.utime(path, (1700000000, 1700000000))
+        second = self.root/'second/career-assistant.zip'; releaser.pack(second)
+        self.assertEqual(first.read_bytes(), second.read_bytes())
+
+    def test_tracked_private_or_extra_paths_are_rejected(self):
+        recorded = releaser.manifest()
+        paths = [*recorded['files'], 'release_manifest.json', '.career-assistant/profile.json']
+        import subprocess
+        result = subprocess.CompletedProcess(['git'], 0, ('\x00'.join(paths)+'\x00').encode(), b'')
+        with patch.object(releaser.subprocess, 'run', return_value=result), self.assertRaisesRegex(ValueError, 'allowlist'):
+            releaser.tracked_check()
 
     def test_bundled_personal_routes_are_rejected(self):
         target=self.root/'skills/career-assistant/references/routes/user-role.md'

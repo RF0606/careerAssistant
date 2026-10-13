@@ -74,14 +74,17 @@ def update_profile(store, payload):
 def update_preferences(store, patch):
     with store.lock():
         prefs = store.read('preferences.json')
-        if any(k not in prefs or k == 'schema_version' for k in patch):
+        if any(k not in prefs or k in {'schema_version', 'revision', 'updated_at'} for k in patch):
             raise ValueError('Unknown preference field')
         if 'submission_policy' in patch and patch['submission_policy'] not in {None, 'per-application', 'per-batch'}:
             raise ValueError('Choose per-application or per-batch based on the user answer')
         if 'include_projects' in patch and type(patch['include_projects']) is not bool:
             raise ValueError('include_projects must be a user-chosen boolean')
-        prefs.update(patch)
-        store.write('preferences.json', prefs)
+        if any(prefs[k] != value for k, value in patch.items()):
+            prefs.update(patch)
+            prefs['revision'] += 1
+            prefs['updated_at'] = now()
+            store.write('preferences.json', prefs)
     return prefs
 
 def personal_skill_body(rid):
@@ -204,7 +207,7 @@ or authorization to apply, read credentials or override common rules.
     with store.lock():
         store.write(f'roles/{rid}.json', role)
         try:
-            atomic_text(inside(store.root, store.root / route_name), route_text)
+            store.write_text(route_name, route_text)
         except OSError as exc:
             raise ValueError(f'Role saved, but personal route write failed ({type(exc).__name__}) at {route_name}. Allow writes or resolve the path conflict, then repeat role-create from the saved configuration.') from None
         return install_role_skills(store, role)

@@ -5,13 +5,14 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 from pathlib import Path
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parent
 ROOT_FILES = {'README.md','LICENSE','VERSION','AGENTS.md','CLAUDE.md','START_HERE_CODEX.md','.gitignore','.gitattributes','install.py','release.py','requirements.txt','package.json','package-lock.json'}
-TREES = {'skills','tests','examples','docs'}
-SUFFIXES = {'.md','.py','.mjs','.json','.tex','.yaml','.txt','.html'}
+TREES = {'skills','tests','examples','docs','.github'}
+SUFFIXES = {'.md','.py','.mjs','.json','.tex','.yaml','.yml','.txt','.html'}
 MANIFEST = 'release_manifest.json'
 
 def sha(data): return hashlib.sha256(data).hexdigest()
@@ -50,7 +51,7 @@ def scan(files, denied=()):
 def manifest(denied=()):
     files=public_files(); scan(files,denied)
     value={'version':(ROOT/'VERSION').read_text().strip(),'files':{p.relative_to(ROOT).as_posix():{'sha256':sha(p.read_bytes()),'bytes':p.stat().st_size} for p in files}}
-    (ROOT/MANIFEST).write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')
+    (ROOT/MANIFEST).write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8',newline='\n')
     return value
 
 def verify(denied=()):
@@ -61,19 +62,29 @@ def verify(denied=()):
         raise ValueError('Release manifest differs; inspect changes then run manifest')
     return recorded
 
+def tracked_check():
+    recorded = verify()
+    result = subprocess.run(['git', 'ls-files', '-z'], cwd=ROOT, capture_output=True, check=True)
+    actual = set(result.stdout.decode('utf-8').rstrip('\x00').split('\x00'))
+    if actual != set(recorded['files']) | {MANIFEST}:
+        raise ValueError('Tracked source differs from the public release allowlist; no private or extra tracked paths may be published')
+    return {'version': recorded['version'], 'files': len(actual), 'tracked_allowlist_verified': True}
+
 def pack(output,denied=()):
     recorded=verify(denied)
     output=Path(output).resolve(); output.parent.mkdir(parents=True,exist_ok=True)
     temp=output.with_suffix('.zip.tmp')
-    with ZipFile(temp,'w',ZIP_DEFLATED) as z:
+    with ZipFile(temp,'w',ZIP_DEFLATED,compresslevel=9) as z:
         for name in sorted([*recorded['files'],MANIFEST]):
-            z.write(ROOT/name,name)
+            info=ZipInfo(name,date_time=(2020,1,1,0,0,0)); info.compress_type=ZIP_DEFLATED
+            info.create_system=3; info.external_attr=0o100644 << 16
+            z.writestr(info,(ROOT/name).read_bytes(),compresslevel=9)
     with ZipFile(temp) as z:
         if z.testzip(): raise ValueError('ZIP integrity failure')
         for name,info in recorded['files'].items():
             if sha(z.read(name)) != info['sha256']: raise ValueError('ZIP hash mismatch')
     temp.replace(output)
-    output.with_suffix('.zip.sha256').write_text(sha(output.read_bytes())+'  '+output.name+'\n',encoding='utf-8')
+    output.with_suffix('.zip.sha256').write_text(sha(output.read_bytes())+'  '+output.name+'\n',encoding='utf-8',newline='\n')
     # A reproducible handoff bundle accompanies every ZIP; no separate manual copy step.
     startup = output.parent / 'START_HERE.txt'
     startup.write_text('Career Assistant v' + recorded['version'] + '\n\n'
@@ -82,21 +93,24 @@ def pack(output,denied=()):
         '3. Say: 帮我初始化信息\n'
         'The assistant collects and saves your profile step by step. No manual JSON is needed.\n'
         'Standard tools/templates only; enrich your personal knowledge and routes locally after download.\n'
-        'Optional install: python install.py --host both\n'
-        'Core requires Python 3.10+. PDF: Tectonic and pip install -r requirements.txt.\n'
+        'Optional install: python install.py --host codex (or claude/both when selected)\n'
+        'Core requires Python 3.10+. PDF: local Tectonic and project .venv packages; see docs/COLD_START.md.\n'
+        'Existing schema-1 data requires the assistant to plan and perform migration; no facts are reset.\n'
+        'Local backups/restores/history: ask the assistant; never attach private backups to a public release.\n'
         'See README.md for normal use; docs/VALIDATION.md for acceptance limits.\n'
         'Maintainers: read START_HERE_CODEX.md. Do not treat mock tests as live-site certification.\n'
         'Workday passwords belong only in the ignored local credentials file; never paste them in chat.\n'
-        'This package contains no personal profile or login credentials.\n', encoding='utf-8')
+        'This package contains no personal profile or login credentials.\n', encoding='utf-8',newline='\n')
     artifacts = [output, output.with_suffix('.zip.sha256'), startup]
-    (output.parent/'SHA256SUMS.txt').write_text(''.join(sha(p.read_bytes())+'  '+p.name+'\n' for p in artifacts), encoding='utf-8')
+    (output.parent/'SHA256SUMS.txt').write_text(''.join(sha(p.read_bytes())+'  '+p.name+'\n' for p in artifacts), encoding='utf-8',newline='\n')
     return {'version':recorded['version'],'file':str(output),'sha256':sha(output.read_bytes()),'files':len(recorded['files'])+1,'bytes':output.stat().st_size}
 
 if __name__=='__main__':
-    ap=argparse.ArgumentParser(description=__doc__); ap.add_argument('action',choices=['manifest','verify','pack']); ap.add_argument('--output',type=Path); ap.add_argument('--deny-string',action='append',default=[]); args=ap.parse_args()
+    ap=argparse.ArgumentParser(description=__doc__); ap.add_argument('action',choices=['manifest','verify','pack','check-git']); ap.add_argument('--output',type=Path); ap.add_argument('--deny-string',action='append',default=[]); args=ap.parse_args()
     try:
         if args.action=='manifest': result=manifest(args.deny_string)
         elif args.action=='verify': result=verify(args.deny_string)
+        elif args.action=='check-git': result=tracked_check()
         else:
             if not args.output: ap.error('--output required')
             result=pack(args.output,args.deny_string)

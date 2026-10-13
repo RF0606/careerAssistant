@@ -1,4 +1,4 @@
-# Local helper interface (schema 1, rubric 1.0)
+# Local helper interface (schema 2, rubric 1.0)
 
 Resolve `career.py` relative to this skill. All commands accept a leading
 `--workspace <path>`; the current directory is the default. JSON input files belong
@@ -46,7 +46,7 @@ direction. Optional tailoring_guidance is a list of direction-specific writing
 priorities derived by the host from that user's facts and full JDs. Optional
 jd_source_ids link to imported JD sources. No linked JD means provisional true.
 There is no fixed direction enum or bundled role guide. Legacy route fields are
-accepted but ignored; existing schema-1 role files remain readable. The direction
+accepted but ignored; schema-1 files need the explicit migration below. The direction
 must match a user-selected ID or title in preferences.targets. After that selection,
 role-create writes routes/<id>.md inside `.career-assistant`, stores its relative
 route_path and route_sha256 in the role config, and creates each requested host's
@@ -141,3 +141,34 @@ Tracker statuses are Pending, Needs user, Blocked, Submitted. The root records c
 matches the list length. Writes use an exclusive lock and atomic replacement. A
 stale lock is not automatically stolen: inspect processes and the last attempt
 before manually removing it. Unknown schema versions are preserved and rejected.
+
+## Knowledge maintenance
+
+Read [data maintenance](data-maintenance.md) for conversational decisions. New
+workspaces use schema 2 and a persistent UUID in workspace.json; preferences have
+helper-owned revision/updated_at fields. Normal commands preserve and reject schema
+1 until migration; no mixed-version defaults are written. Immutable history
+snapshots retain their original schema, separate from active files.
+
+```text
+career.py backup --label manual
+career.py backup-verify <private-backup.zip>
+career.py history --limit 20 --path profile.json
+career.py restore-plan <private-backup.zip>
+career.py restore --plan <returned-plan-id> --confirmation <actual-user-request>
+career.py migrate-plan
+career.py migrate --plan <returned-plan-id> --confirmation <actual-user-request>
+career.py maintenance-recover
+```
+
+Backup returns path/hash/count and exclusions. History returns metadata and hashes,
+without profile values. Plan returns changed/removed paths, source/target schema
+and whether existing knowledge is affected; it never returns backup contents.
+Restore/migrate recheck the archive and current fingerprint, save a prechange
+backup and journal atomic file writes with undo objects. Changed/stale plans stop.
+Restore into a populated different-UUID workspace is rejected; use a separate empty
+workspace rather than mixing people. The same workspace's newer application history
+and associated artifacts remain; contradictions stop for review. All old grants
+are cleared, prepared attempts paused, and Submitted/unknown attempts preserved.
+Maintenance-recover rolls back an interrupted operation after hash checks. Files
+changed outside that operation are preserved for manual review, never overwritten.

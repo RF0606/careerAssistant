@@ -215,7 +215,7 @@ def outcome(store, app_id, payload):
                 raise ValueError('Persist confirmation evidence before closing the page')
             if not payload.get('confirmation_url') or not payload.get('next_action'):
                 raise ValueError('Confirmation URL and next action are required')
-            attempt.update({'outcome': 'confirmed', 'evidence_path': str(evidence.relative_to(store.root)), 'evidence_sha256': digest(evidence.read_bytes()), 'confirmation_text': payload['confirmation_text'], 'confirmation_url': payload['confirmation_url'], 'confirmed_at': now()})
+            attempt.update({'outcome': 'confirmed', 'evidence_path': evidence.relative_to(store.root).as_posix(), 'evidence_sha256': digest(evidence.read_bytes()), 'confirmation_text': payload['confirmation_text'], 'confirmation_url': payload['confirmation_url'], 'confirmed_at': now()})
             row['status'] = 'Submitted'
         elif result == 'failed':
             if attempt and attempt['outcome'] == 'unknown' and payload.get('verified_not_submitted') is not True:

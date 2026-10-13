@@ -22,6 +22,10 @@ Use only this workspace's `.career-assistant` data. Examples are fictional.
 Projects are excluded by default; include a separate Projects block below Work
 Experience only when the user requests it and has supporting project facts.
 
+For local backup, restore, change history or data upgrades, read that skill's
+data-maintenance reference and use its helpers. Private career backups never belong
+in public source or releases; credentials and browser sessions stay excluded.
+
 Only when asked to maintain/build/release this software, read `START_HERE_CODEX.md`.
 Ordinary onboarding never creates a GitHub repository, commits, or publishes data.
 Never read Workday credential contents into model-visible tool output.

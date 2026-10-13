@@ -40,12 +40,15 @@ Suggested prompt after extracting this ZIP into a new career-assistant directory
    sandbox configuration and use --executable if PATH selects an incompatible CLI.
 6. Inspect generated PDF images and text, including optional Projects and special
    characters. Do not replace actual visual inspection with a success assertion.
-7. Fix demonstrated failures, update tests and docs/VALIDATION.md with the actual
+7. Exercise private backup/restore/history and explicit schema 1-to-2 migration in
+   fictional workspaces. Verify excluded credentials/browser files are not read,
+   Submitted/unknown attempts survive and interrupted operations can roll back.
+   Fix demonstrated failures, update tests and docs/VALIDATION.md with the actual
    result. Keep real-user state, credentials, logs and generated personal skills out
    of tracked files. Regenerate the release manifest after changes.
    Include interrupted role generation/retry, verification of every requested
    host's skill, and stale role/route context across resume and submission steps.
-8. Run `python release.py pack --output outputs/career-assistant-v0.1.7.zip`.
+8. Run `python release.py pack --output outputs/career-assistant-v0.1.8.zip`.
    The pack command also writes startup instructions and SHA256SUMS.txt. Extract
    the final ZIP, verify its manifest, install both host copies and rerun tests there.
 
@@ -61,14 +64,20 @@ repository and push the clean source. Typical commands, issued separately:
 
 ```text
 git init -b master
-git add README.md LICENSE VERSION AGENTS.md CLAUDE.md START_HERE_CODEX.md .gitignore .gitattributes install.py release.py requirements.txt package.json package-lock.json skills tests examples docs release_manifest.json
-git commit -m "feat: release Career Assistant v0.1.7"
+git add README.md LICENSE VERSION AGENTS.md CLAUDE.md START_HERE_CODEX.md .gitignore .gitattributes .github install.py release.py requirements.txt package.json package-lock.json skills tests examples docs release_manifest.json
+git commit -m "feat: release Career Assistant v0.1.8"
 gh repo create careerAssistant --public --source . --remote origin --push
 ```
 
 Adjust the version and exact allowlisted paths to the current manifest. Authentication
 must belong to the publishing user. Existing remotes/repos must be inspected, not
 overwritten. Ordinary user onboarding never runs these commands.
+
+The existing repository uses `.github/workflows/ci.yml` for cross-platform tests
+and a verified public bundle. `.github/workflows/release.yml` repeats that workflow
+for a version tag, then publishes development-preview assets with repository-scoped
+permissions. Read docs/RELEASING.md; a preview Release is not dual-host acceptance.
+Keep docs/VALIDATION.md current and move older evidence into VALIDATION_HISTORY.md.
 
 ## Maintenance priorities
 
@@ -81,6 +90,6 @@ Preserve Projects OFF by default, with an optional separate block after Work Exp
 Preserve locally stored Workday username/password pairs and sanitized in-memory filling.
 Do not inherit any other user's standing registration or submission permission.
 Actual platform support is host-driven; prioritize verified form changes and concise
-blocked explanations. v0.1.7 has no hosted model backend or background scheduler.
+blocked explanations. v0.1.8 has no hosted model backend or background scheduler.
 Current acceptance is development-preview only until both real-host conversation
 gates pass. See docs/VALIDATION.md; a safe ZIP alone is not full product acceptance.

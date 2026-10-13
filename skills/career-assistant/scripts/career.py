@@ -32,11 +32,28 @@ def main(argv=None):
     for name in ['prepare', 'outcome']:
         p = sub.add_parser(name); p.add_argument('application_id'); p.add_argument('--input', required=True, type=Path)
     p = sub.add_parser('begin-submit'); p.add_argument('application_id')
+    p = sub.add_parser('backup'); p.add_argument('--label', default='manual')
+    p = sub.add_parser('backup-verify'); p.add_argument('archive', type=Path)
+    p = sub.add_parser('restore-plan'); p.add_argument('archive', type=Path)
+    sub.add_parser('migrate-plan')
+    sub.add_parser('maintenance-recover')
+    p = sub.add_parser('history'); p.add_argument('--limit', type=int, default=20); p.add_argument('--path')
+    for name in ['restore', 'migrate']:
+        p = sub.add_parser(name); p.add_argument('--plan', required=True); p.add_argument('--confirmation', required=True)
     args = ap.parse_args(argv)
     store = Store(args.workspace)
     data = load(args.input) if hasattr(args, 'input') else None
     command = args.command
     active_host = 'claude' if Path(__file__).resolve().parents[3].name == '.claude' else 'codex'
+    if command in {'backup', 'backup-verify', 'restore-plan', 'restore', 'migrate-plan', 'migrate', 'maintenance-recover', 'history'}:
+        import maintenance
+        if command == 'backup': return maintenance.backup(store, args.label)
+        if command == 'backup-verify': return maintenance.verify_backup(args.archive)
+        if command == 'restore-plan': return maintenance.plan(store, args.archive)
+        if command == 'migrate-plan': return maintenance.plan(store, operation='migrate')
+        if command == 'maintenance-recover': return maintenance.recover(store)
+        if command == 'history': return maintenance.history(store, args.limit, args.path)
+        return maintenance.apply(store, args.plan, args.confirmation, expected_operation=command)
     if command == 'doctor':
         from capabilities import report
         return report(args.workspace, args.host or active_host, args.probe_writes, args.pdf_smoke)

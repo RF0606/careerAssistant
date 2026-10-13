@@ -1,6 +1,6 @@
 ---
 name: career-assistant
-description: Guide career-profile setup when a user says 帮我初始化信息, 初始化职业档案 or initialize my career profile; then find and score jobs, tailor evidence-based one-page English resumes, and execute explicitly authorized applications. Use the selected user's local workspace, never another person's facts.
+description: Initialize or maintain a local career profile, including private backups, restores and data upgrades; find and score jobs, tailor evidence-based one-page English resumes, and execute explicitly authorized applications. Triggers include 帮我初始化信息, 初始化职业档案 and initialize my career profile. Use only the selected user's workspace.
 ---
 
 # Career Assistant
@@ -45,6 +45,9 @@ promote them into shared references or publish them as default knowledge.
 - Explicit applications: read [applications](references/applications.md) and the
   relevant [platform guide](references/platforms.md). Initialization is not submission authorization.
 - Installation or missing tools: read [setup](references/setup.md).
+- Local knowledge backup, restore, change history or an older data schema: read
+  [data maintenance](references/data-maintenance.md). Use private backups and the
+  reviewed plan; do not ask users to hand-edit files or upload backups.
 - For helper JSON and command examples, read [data interface](references/data-interface.md).
 
 ## Boundaries that apply throughout
