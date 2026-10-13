@@ -11,6 +11,8 @@ username: <your username>, password: <your password>
 Multiple exact pairs are supported. Never mix a username from one row with a
 password from another. The file and all browser state stay inside the ignored
 private directory. Do not sync credentials through Git, release ZIPs, email or chat.
+The reader resolves the file path and rejects links/junctions escaping this ignored
+Workday directory before reading contents. Use the local file, not an external link.
 Explain local plaintext storage to the user; do not solicit values in a message.
 
 `node scripts/local_credentials.mjs <workspace>` validates only counts and emits
@@ -31,6 +33,14 @@ credentials. If the runtime cannot guarantee this, let the user log in manually.
 If the host's browser runtime cannot read local files/import the helper safely,
 report that precise capability gap and hand the login to the user. Never create
 an unsupported connection to a browser just to bypass that limitation.
+
+For a documented Codex tab with async url() and tab.playwright.locator, use
+hostBrowserPage(tab) with the same persistent session.fill. The helper awaits the
+actual URL and checks origin again before password filling; navigation stops it.
+Keep one authorized work tab across jobs. A new tab may have separate auth state;
+inspect it. In a genuinely new run an authorized fresh login may be needed before
+Candidate Home. Never recreate a stopped session within a run to evade its limits.
+The loopback adapter under tests is never used for real Workday credentials.
 
 Verify employer/tenant and intended account. If already authenticated correctly,
 reuse the session. Keep a run-local in-memory ledger keyed by exact tenant/site:

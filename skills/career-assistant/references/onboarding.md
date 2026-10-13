@@ -14,7 +14,8 @@ blocked helper and ask the user to enable workspace writes/command execution in
 the host. Continue discussing materials, but never claim durable recovery until
 the helper succeeds. Do not work around a host denial with another write tool.
 
-Run `career.py init` idempotently. Run `doctor`, inspect host tools, record
+Select a supported Python from PATH or host runtime discovery; read setup.md if
+missing. Run `career.py init` idempotently. Run `doctor --host <active-host> --probe-writes`, inspect host tools, record
 `checkpoint environment`. Dependencies for PDF/browser operations are optional at
 this stage. Choose conversation language from the user, not the example profile.
 
@@ -46,8 +47,9 @@ this stage. Choose conversation language from the user, not the example profile.
    submission authorization.
    role-create generates `.career-assistant/routes/<id>.md` after the selection,
    alongside local career-resume-<id> skills that read that guide. The download,
-   install and initial init command must not create default routes. Default both
-   hosts; select one if the user specifies. Never encode personal facts in skills.
+   install and initial init command must not create default routes. Generate for
+   the selected active host; use --host both only when both are requested.
+   Never encode personal facts in skills.
    On resume, reuse existing routes; only refresh a direction when its preference,
    guidance or JD context changed or an older config has no generated route.
    Read status.role_issues and the role's generation record. A partial write leaves

@@ -9,7 +9,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = '0.1.6'
+VERSION = '0.1.7'
 SCHEMA = 1
 PRIVATE = '.career-assistant'
 SECRET_KEYS = {'password', 'passwd', 'access_token', 'refresh_token', 'api_key', 'client_secret', 'cookies', 'otp', 'sin', 'ssn', 'passport_number'}

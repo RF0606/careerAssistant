@@ -1,0 +1,78 @@
+# First use on a new computer
+
+Open the downloaded project and say **帮我初始化信息**. The host performs the
+checks and saves progress; examples below are for troubleshooting/maintainers.
+No personal knowledge or role directions come with the download.
+
+Select an existing Python 3.10+ from python, python3, py -3 or the host's local
+runtime discovery. Use its absolute path if PATH selects an older interpreter.
+If none exists, install a user-accessible Python from
+[python.org](https://www.python.org/downloads/), then reopen the host. Helpers now
+reject Python 3.8/3.9 specifically before writing career data or installing skills.
+Do not claim saved progress until a helper actually succeeds.
+
+| Missing capability | Available now | Next action |
+| --- | --- | --- |
+| pypdf | Text/Markdown/DOCX, conversational facts, scoring | Use text or add PDF packages locally |
+| PyMuPDF | Profile, role skills, scoring, resume.tex | Add QA packages before compilation/network downloads |
+| Tectonic | Profile, scoring, source-only resume | Install its official local binary for the OS |
+| TeX cache | Profile and source-only resume | Allow first compilation's bundle downloads, then inspect the PDF |
+| Browser or Node CLI | Profile, scoring, available PDF tools | Inspect the supported host browser; CLI presence proves no session |
+| Writes denied | Discuss materials | Enable this workspace's writes/commands in the host; do not bypass denial |
+
+The assistant can run:
+
+```text
+python skills/career-assistant/scripts/career.py doctor --host codex --probe-writes
+python skills/career-assistant/scripts/career.py doctor --pdf-smoke
+```
+
+Normal doctor is read-only. --probe-writes creates/removes small empty test files
+in private data and selected host skill paths, reporting failed paths/error types.
+It creates no routes, facts or preferences. OS checks cannot certify host command
+policy. --pdf-smoke compiles a small non-personal probe with --only-cached, makes
+no downloads and never marks a resume ready. Passing covers only the probe's TeX
+resources; a real resume still needs full PDF/text/visual QA.
+
+Use a project .venv and its Python directly. Activation is unnecessary, so changing
+PowerShell execution policy is unnecessary. See the official
+[venv guidance](https://docs.python.org/3/library/venv.html).
+
+Windows:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe skills/career-assistant/scripts/career.py doctor
+```
+
+macOS/Linux:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python skills/career-assistant/scripts/career.py doctor
+```
+
+Reuse an existing compatible .venv rather than recreating it. Use the same chosen
+interpreter for later helpers. If venv/ensurepip is missing from an OS Python,
+select a complete supported distribution; do not silently install globally or run
+sudo. Doctor next_actions supplies interpreter/venv commands as argument arrays.
+
+Use an official [Tectonic binary](https://tectonic-typesetting.github.io/en-US/install.html)
+for the OS/architecture in a local tools directory, exposing it to the current
+session PATH. Preserve global shell profiles. A binary on PATH proves neither a
+working cache nor network access. Missing tools, downloads and timeouts leave
+sources as draft. Browser setup can be deferred; use supported host APIs first.
+See [Codex permissions](CODEX_SETUP.md) and [browser QA](HOST_BROWSER_VALIDATION.md).
+
+Maintainer cold-start reproduction:
+
+```text
+python tests/cold_start.py --results test-results/cold-start
+```
+
+Use python3 on POSIX if needed. This creates a new fictional workspace and a venv
+without pip/PDF packages or optional executables on PATH. It checks empty init,
+role generation, scoring, drafts and informative PDF failures. Windows and Linux
+ordinary-user checks passed. macOS has instructions and still needs a real Mac run.

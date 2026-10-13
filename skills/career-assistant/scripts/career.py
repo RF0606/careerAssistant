@@ -3,10 +3,12 @@
 from __future__ import annotations
 import argparse
 import json
-import shutil
 import sys
 from pathlib import Path
-from storage import Store, load
+if sys.version_info < (3, 10):
+    print(json.dumps({'error': 'Python 3.10+ is required. Select a supported python/python3/py -3 interpreter or install it from python.org; no career data was written.'}), file=sys.stderr)
+    sys.exit(1)
+from storage import Store, load, slug
 import profiles
 import jobs
 import resume
@@ -15,12 +17,13 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--workspace', type=Path, default=Path.cwd())
     sub = ap.add_subparsers(dest='command', required=True)
-    for name in ['init', 'status', 'doctor', 'workday-init']:
+    for name in ['init', 'status', 'workday-init']:
         sub.add_parser(name)
+    p = sub.add_parser('doctor'); p.add_argument('--host', choices=['codex','claude','both']); p.add_argument('--probe-writes', action='store_true'); p.add_argument('--pdf-smoke', action='store_true')
     p = sub.add_parser('import-source'); p.add_argument('path', type=Path); p.add_argument('--kind', choices=['document','user-statement'], default='document')
     for name in ['profile-update', 'preferences-update', 'assess', 'grant']:
         p = sub.add_parser(name); p.add_argument('--input', required=True, type=Path)
-    p = sub.add_parser('role-create'); p.add_argument('--input', required=True, type=Path); p.add_argument('--host', choices=['codex','claude','both'], default='both')
+    p = sub.add_parser('role-create'); p.add_argument('--input', required=True, type=Path); p.add_argument('--host', choices=['codex','claude','both'])
     p = sub.add_parser('role-retry'); p.add_argument('role_id')
     p = sub.add_parser('checkpoint'); p.add_argument('step'); p.add_argument('--note', default='')
     p = sub.add_parser('render'); p.add_argument('job_id'); p.add_argument('--input', required=True, type=Path); p.add_argument('--source-only', action='store_true')
@@ -33,9 +36,10 @@ def main(argv=None):
     store = Store(args.workspace)
     data = load(args.input) if hasattr(args, 'input') else None
     command = args.command
+    active_host = 'claude' if Path(__file__).resolve().parents[3].name == '.claude' else 'codex'
     if command == 'doctor':
-        import importlib.util
-        return {'python': sys.version.split()[0], 'tools': {x: bool(shutil.which(x)) for x in ['tectonic','node','npm','codex','claude']}, 'packages': {x: importlib.util.find_spec(x) is not None for x in ['pypdf','fitz']}, 'browser': 'Host must inspect available browser tools; CLI presence is not proof of an active session'}
+        from capabilities import report
+        return report(args.workspace, args.host or active_host, args.probe_writes, args.pdf_smoke)
     if command == 'init': return store.initialize()
     if command == 'workday-init':
         store.read('profile.json')
@@ -50,7 +54,16 @@ def main(argv=None):
     if command == 'import-source': return profiles.import_source(store, args.path, args.kind)
     if command == 'profile-update': return profiles.update_profile(store, data)
     if command == 'preferences-update': return profiles.update_preferences(store, data)
-    if command == 'role-create': return profiles.role_create(store, data, ['codex','claude'] if args.host == 'both' else [args.host])
+    if command == 'role-create':
+        if args.host:
+            hosts = ['codex','claude'] if args.host == 'both' else [args.host]
+        else:
+            rid = slug(data['id'])
+            role_file = store.root / f'roles/{rid}.json'
+            previous = store.read(f'roles/{rid}.json') if role_file.is_file() else {}
+            saved = (previous.get('generation') or {}).get('hosts', [])
+            hosts = saved if isinstance(saved, list) and saved and all(h in {'codex','claude'} for h in saved) else [active_host]
+        return profiles.role_create(store, data, hosts)
     if command == 'role-retry': return profiles.role_retry(store, args.role_id)
     if command == 'checkpoint': return profiles.checkpoint(store, args.step, args.note)
     if command == 'assess': return jobs.assess(store, data)
@@ -71,4 +84,7 @@ if __name__ == '__main__':
         print(json.dumps(main(), ensure_ascii=False, indent=2))
     except (ValueError, KeyError, FileNotFoundError, TimeoutError) as exc:
         print(json.dumps({'error': str(exc)}, ensure_ascii=False), file=sys.stderr)
+        sys.exit(1)
+    except OSError as exc:
+        print(json.dumps({'error': f'Local operation failed ({type(exc).__name__}) at {exc.filename or "the requested path"}. Check workspace writes, path conflicts and local tool execution. Resolve a host policy denial in the host; do not bypass it.'}, ensure_ascii=False), file=sys.stderr)
         sys.exit(1)

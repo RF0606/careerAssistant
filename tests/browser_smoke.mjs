@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, symlink } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn, execFileSync } from 'node:child_process';
 import { chromium } from 'playwright';
-import { parseCredentials, fillWorkday, createWorkdayLoginSession } from '../skills/career-assistant/scripts/local_credentials.mjs';
+import { parseCredentials, loadCredentials, fillWorkday, createWorkdayLoginSession, hostBrowserPage } from '../skills/career-assistant/scripts/local_credentials.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const python=process.env.CAREER_TEST_PYTHON||'python';
@@ -81,6 +81,14 @@ try {
  await assert.rejects(fillWorkday(page,workspace,'https://unrelated.example.invalid',0,'#email','#secret'),/values omitted/);
  await assert.rejects(fillWorkday(page,workspace,'https://fictional.wd5.myworkdayjobs.com',8,'#email','#secret'),/values omitted/);
  passed.push('workday-memory-fill','workday-origin-guard','workday-attempt-index-guard');
+ const hostTab={url:async()=>page.url(),playwright:{locator:selector=>page.locator(selector)}};
+ await fillWorkday(hostBrowserPage(hostTab),workspace,'https://fictional.wd5.myworkdayjobs.com',0,'#email','#secret');
+ passed.push('workday-async-host-api');
+ let urlReads=0,passwordFilled=false;
+ const navigatingHost={url:async()=>++urlReads===1?'https://fictional.wd5.myworkdayjobs.com/login':'https://unrelated.example.invalid/login',playwright:{locator:selector=>({count:async()=>1,getAttribute:async()=>selector==='#secret'?'password':'email',fill:async()=>{if(selector==='#secret')passwordFilled=true;}})}};
+ await assert.rejects(fillWorkday(hostBrowserPage(navigatingHost),workspace,'https://fictional.wd5.myworkdayjobs.com',0,'#email','#secret'),/values omitted/);
+ assert.equal(passwordFilled,false);
+ passed.push('workday-async-origin-change-stops-before-password');
  const origin='https://fictional.wd5.myworkdayjobs.com';
  const login=createWorkdayLoginSession();
  await login.fill(page,workspace,origin,0,'#email','#secret');
@@ -106,6 +114,15 @@ try {
  const validation=JSON.parse(execFileSync(process.execPath,[path.join(root,'skills/career-assistant/scripts/local_credentials.mjs'),workspace],{encoding:'utf8',windowsHide:true}));
  assert.deepEqual(validation,{valid:true,pairs:2,values_omitted:true});
  passed.push('workday-sanitized-errors-and-cli');
+ // Do not follow a credential-directory junction/symlink outside the ignored scope.
+ const escaped=path.join(dir,'escaped-credential-workspace');
+ const outside=path.join(dir,'outside-credential-fixture');
+ await mkdir(path.join(escaped,'.career-assistant/credentials'),{recursive:true});
+ await mkdir(outside);
+ await writeFile(path.join(outside,'accounts.txt'),'username: fixture@example.invalid, password: FICTIONAL-scope-test\n');
+ await symlink(outside,path.join(escaped,'.career-assistant/credentials/workday'),os.platform()==='win32'?'junction':'dir');
+ await assert.rejects(loadCredentials(escaped),/values omitted/);
+ passed.push('workday-private-directory-guard');
  // Connect local credential filling, a mock login, resume upload, authorization and receipt.
  const flowWorkspace=path.join(dir,'workday-flow');
  const setup=run([path.join(root,'tests/browser_bridge.py'),flowWorkspace,'success']);

@@ -1,5 +1,5 @@
 {
-  "version": "0.1.6",
+  "version": "0.1.7",
   "files": {
     ".gitattributes": {
       "sha256": "c18a2d17cc6f71c9b5c0b3d45f87eb903e18e2f8afc517f2f6f4ad7f3880e10d",
@@ -22,27 +22,27 @@
       "bytes": 1086
     },
     "README.md": {
-      "sha256": "b648ae132a79ef262599a0bcbfc734df15a38060edf56b72e7abcae0785fe869",
-      "bytes": 12047
+      "sha256": "581251b397f6add169c52425924cc8584c9be62ffe703ecc006382f28085a9f6",
+      "bytes": 12964
     },
     "START_HERE_CODEX.md": {
-      "sha256": "8ab5b225453329a5f365915d027d598890941cad6d5f5d8d5c10612f7ebcbb74",
-      "bytes": 5339
+      "sha256": "bffa2067af578e713f6c2c4d044b93a279edcfd54ae101efb70b9e4e9601b204",
+      "bytes": 5656
     },
     "VERSION": {
-      "sha256": "1f2110568627307becae713f8b808f3d9d912d4b2a24ed6a78605f03f7437d3c",
+      "sha256": "ba57e7c7f71876d645bcdd9fb070f2dea8e6db5ed284a7e3d85c6b7d2409fef1",
       "bytes": 6
     },
     "install.py": {
-      "sha256": "743e1093b576ef6b53929050d8ae43550b3e563c304fa257d06ea1efc81ced53",
-      "bytes": 3596
+      "sha256": "80424c405bd481548d35c34a8a9afecd61ae98321f639c229dc5d5ca0854aca9",
+      "bytes": 4065
     },
     "package-lock.json": {
-      "sha256": "8c727a5277e040a7f10731ba8a1cba5672cdfbc79915180bb75d137c60fa53ad",
+      "sha256": "ae9938be4d649647e8e18128a5fcde91606c75d1948968f3cd4b067a1a8adcef",
       "bytes": 1246
     },
     "package.json": {
-      "sha256": "2dc1d7025f31df05ec15f135368fe0fbbae6e47212fd9ce70d11b4c0a38aaf99",
+      "sha256": "8b54d08c71216d22770f2ccd445b585d184906d4ebc0183a5df57a8f7331d9c1",
       "bytes": 327
     },
     "release.py": {
@@ -57,9 +57,17 @@
       "sha256": "1c7c96e8b02f6e5f11e3730c644bb9f6c14401cc3e969a2c8c5e2feb986540e9",
       "bytes": 3622
     },
+    "docs/COLD_START.md": {
+      "sha256": "52b8d34b6131ad8a69037df579eff7b42a8dfd375b1ce4291a50d845abe090ba",
+      "bytes": 3933
+    },
+    "docs/HOST_BROWSER_VALIDATION.md": {
+      "sha256": "99fa25d251c6a710be75b1bfeeb066a9daf5b3f7d6fc2b55a8d34a54301dcbd9",
+      "bytes": 3805
+    },
     "docs/VALIDATION.md": {
-      "sha256": "fa709c95261945b594ab0190c68717fd1da8214c9c34e3b62286421f692af0ac",
-      "bytes": 21592
+      "sha256": "32af42a8d617fa1659f8f5c0274f20a4879b9cd223ee553e614450f6274c39e1",
+      "bytes": 27425
     },
     "examples/README.md": {
       "sha256": "3d482ccb3145d4c71e86c181b40e6e2d7359ceb14f96eff4af66b757e32d4624",
@@ -74,20 +82,20 @@
       "bytes": 1675
     },
     "skills/career-assistant/references/applications.md": {
-      "sha256": "414f0be80ad3b0f5206ceef259871bb8ef099f60f3a8e788c10e00a193c68697",
-      "bytes": 3937
+      "sha256": "175b2f8d17d4611a5fddffb4ebc54585fcf1fde6dcba92c9718c499a87fb511d",
+      "bytes": 4372
     },
     "skills/career-assistant/references/data-interface.md": {
-      "sha256": "c2e909e16684e5b618a875431e39d85b079970d97b725d15f9a256db5a72c11e",
-      "bytes": 8546
+      "sha256": "7b28dc473854dbda5b9a203ab13e7983c4f458bfe9ae7f1f09a74ef541f22014",
+      "bytes": 8945
     },
     "skills/career-assistant/references/matching.md": {
       "sha256": "2b3b657e0670d003099ec8f42957c40c1607bcb4940a1bba8960d74ec0d5320e",
       "bytes": 2574
     },
     "skills/career-assistant/references/onboarding.md": {
-      "sha256": "189216be0a103478a6cdf4122b0990ba77d3ca6870e1a2079e863fe5c6c6f573",
-      "bytes": 6441
+      "sha256": "67c5e9f526560559901965ce6df0204269c96d02eed1ffcf9079a163b31cc6d1",
+      "bytes": 6600
     },
     "skills/career-assistant/references/platforms.md": {
       "sha256": "b9db4b41f899741331ffd988848b5ce61c6ab82bc06d9e7510fd1ca369e9372a",
@@ -98,39 +106,43 @@
       "bytes": 3113
     },
     "skills/career-assistant/references/setup.md": {
-      "sha256": "c37008c30d3e6d0e6779da30fe0d8d6f08cf205443ce26d546d6860a27d2c6ae",
-      "bytes": 2483
+      "sha256": "2309696899e98dc8c4c84f9a5cb55d659830a8f1132168d3b6cd0a30fbfdb40c",
+      "bytes": 3447
     },
     "skills/career-assistant/references/workday-login.md": {
-      "sha256": "eff122c4d81fd844717f2a7fdd3b86b43dd39e05f1cea5406a888e6432a1bc96",
-      "bytes": 2993
+      "sha256": "3d800d6aaf3706046650723701a09a049bc36d6b8abfaa720f73418451cd1a59",
+      "bytes": 3726
+    },
+    "skills/career-assistant/scripts/capabilities.py": {
+      "sha256": "b0da7cc66931caa44a945ca751c41b2efa0d8fe83819e24f4b97e29c09fe8a06",
+      "bytes": 5272
     },
     "skills/career-assistant/scripts/career.py": {
-      "sha256": "32622ca612ac244a9ffc83ceff90e27cb59588edf51064fbbee089069a1defb6",
-      "bytes": 4713
+      "sha256": "9ef65eb51cdbbb322f66e063225cf5321dcfedb9905a8c4ce92b4f14e750a1f2",
+      "bytes": 5785
     },
     "skills/career-assistant/scripts/jobs.py": {
       "sha256": "c37bd2166e57e2a8b25f738785a4f514a5766993b276aa234839bbcd9cbd68d8",
       "bytes": 15112
     },
     "skills/career-assistant/scripts/local_credentials.mjs": {
-      "sha256": "40fbe2b134e6126a1aee7f5b4c280cff17a3cab5a1de4e45e34516607c3e3aef",
-      "bytes": 5049
+      "sha256": "0e14dc5176f72d96aeb5e3491082e33344f54c3a89492f661cb0e357e8b0a2cd",
+      "bytes": 5863
     },
     "skills/career-assistant/scripts/profiles.py": {
       "sha256": "98888e33933428ecb5594eb410423ac1d7607caf4cf6e794c89ba37b8b2feb01",
       "bytes": 14360
     },
     "skills/career-assistant/scripts/resume.py": {
-      "sha256": "400d8bf30284f2317bdc14888fdfbf85f8d285138e548d31d29f12c98da9828f",
-      "bytes": 10063
+      "sha256": "c210a53ae7210116c7ab0da521e025e1a013d1705028adae48df0286d2ef1a14",
+      "bytes": 10464
     },
     "skills/career-assistant/scripts/roles.py": {
       "sha256": "938c4cb64943ab8c06880bf60fa4e0ba6ed5749a6faa50c2d8d68a35c07cef86",
       "bytes": 3906
     },
     "skills/career-assistant/scripts/storage.py": {
-      "sha256": "eb47d4d778b17261f8aad4614daa78b746e9cc4fb295ec3f594c9fe9d23a3b6f",
+      "sha256": "cde57a782762553d663da26b7b328a14a8709685090c1470964e0784c4933a47",
       "bytes": 6742
     },
     "skills/career-assistant/SKILL.md": {
@@ -142,12 +154,28 @@
       "bytes": 619
     },
     "tests/browser_smoke.mjs": {
-      "sha256": "be2b90eb58d8e4bd09a7dc5200714dddb907b0d04e5047f8166259b586e109a3",
-      "bytes": 11602
+      "sha256": "a2cefb6d9e7df5bbc50474961ccaed305c80e5152fee00f50140ce017596a15e",
+      "bytes": 13195
+    },
+    "tests/cold_start.py": {
+      "sha256": "6846ff87f7d33580d43670b1ce00027605df692752072b75ccae57428ac546e5",
+      "bytes": 4205
     },
     "tests/fixtures.py": {
       "sha256": "c6cb40f9365f1ce5687d37b039d814a43aee0d8879294fcc5415e9ad61274724",
       "bytes": 6803
+    },
+    "tests/host_browser_fixture.mjs": {
+      "sha256": "ec16882eb3c6e360eb88af6f86f7bff29c4116668855531c328fb8374ed76c22",
+      "bytes": 2552
+    },
+    "tests/host_browser_fixture.py": {
+      "sha256": "622035da39737fcdb04791d3c50e8f084c6a394298b17ae09892d720436d902b",
+      "bytes": 2165
+    },
+    "tests/host_browser_server.py": {
+      "sha256": "52fdcaf4a412e8f2b6f3cdba91a127909622a1f9060bbc2ab7c81dd2c2d712c1",
+      "bytes": 8794
     },
     "tests/host_smoke.py": {
       "sha256": "0ac8cdb66ab98fa8e4d79d7ba090ca36995d6422ca3504732bf23ec380799169",
@@ -156,6 +184,14 @@
     "tests/mock_server.py": {
       "sha256": "ed7088e4a79bffe86ba5dbe7351df989efbe206c8f1298fea141c305b399b92a",
       "bytes": 2965
+    },
+    "tests/test_cold_start.py": {
+      "sha256": "e0ab78e96a906514a2cb683b2ae13d0ef52b46e3c307006b438eb472a230d61b",
+      "bytes": 4873
+    },
+    "tests/test_host_browser_fixture.py": {
+      "sha256": "0d0b9bb9e697c1ff974c3987f97e5824fdee906121d4c83564c6c159ed6dee28",
+      "bytes": 4153
     },
     "tests/test_release.py": {
       "sha256": "400b378ec259bf410b1d8b0ef55417663de4ac296da7b21883600da3452c6e2d",
@@ -166,8 +202,8 @@
       "bytes": 15099
     },
     "tests/test_workflow.py": {
-      "sha256": "6318a109b1908ad45d7588a954aa76b5763c2568f4692917a817b7f1fffe0e5e",
-      "bytes": 23385
+      "sha256": "7b87aa53db2c6592ce2101b4b5851dbdbe51032813b14d215cbebf33c0d49f6d",
+      "bytes": 23562
     }
   }
 }

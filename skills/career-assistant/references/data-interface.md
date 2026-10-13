@@ -7,6 +7,8 @@ profile inputs to hold passwords or sensitive identity numbers.
 
 ```text
 python <skill>/scripts/career.py --workspace <root> init
+python <skill>/scripts/career.py --workspace <root> doctor --host codex --probe-writes
+python <skill>/scripts/career.py --workspace <root> doctor --pdf-smoke
 python <skill>/scripts/career.py --workspace <root> import-source <file> --kind document
 python <skill>/scripts/career.py --workspace <root> profile-update --input <private-json>
 python <skill>/scripts/career.py --workspace <root> preferences-update --input <private-json>
@@ -57,6 +59,9 @@ does not serve as factual evidence or grant submission permission.
 The role's generation record stores status pending/ready, requested hosts, each
 skill's relative path/SHA-256, context_hash and sanitized failures (path and error
 type only). Writes are atomic per file; interrupted generation stays pending.
+Without --host, a refresh preserves that saved host list. New directions infer
+the installed host (.claude or .agents); the canonical source defaults to Codex.
+An explicit --host overrides that selection. Doctor infers the same active host.
 role-retry reads the saved role and host selection, repairs installation only,
 and returns ready after verifying every file. It rejects changed role/route context
 and unselected directions. Resolve write permissions/path conflicts before retrying.

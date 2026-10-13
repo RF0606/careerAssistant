@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 
@@ -21,7 +21,12 @@ export function parseCredentials(text) {
 export async function loadCredentials(workspace) {
   let text;
   try {
-    text = await readFile(path.join(workspace, '.career-assistant', 'credentials', 'workday', 'accounts.txt'), 'utf8');
+    const root = await realpath(workspace);
+    const directory = path.join(root, '.career-assistant', 'credentials', 'workday');
+    const file = await realpath(path.join(directory, 'accounts.txt'));
+    const relative = path.relative(directory, file);
+    if (path.isAbsolute(relative) || relative === '..' || relative.startsWith('..' + path.sep)) throw new Error('scope');
+    text = await readFile(file, 'utf8');
   } catch {
     throw new Error('Cannot read local Workday credentials; values omitted');
   }
@@ -33,7 +38,7 @@ export async function loadCredentials(workspace) {
 export async function fillWorkday(page, workspace, expectedOrigin, pairIndex, usernameSelector, passwordSelector) {
   try {
     const expected = new URL(expectedOrigin);
-    const actual = new URL(page.url());
+    const actual = new URL(await page.url());
     if (expected.protocol !== 'https:' || !/(^|\.)(myworkdayjobs|myworkdaysite)\.com$/.test(expected.hostname) || actual.origin !== expected.origin) {
       throw new Error('origin');
     }
@@ -44,13 +49,22 @@ export async function fillWorkday(page, workspace, expectedOrigin, pairIndex, us
     const password = page.locator(passwordSelector);
     if (usernameSelector === passwordSelector || await username.count() !== 1 || await password.count() !== 1 || await password.getAttribute('type') !== 'password') throw new Error('controls');
     await username.fill(pairs[pairIndex].username);
-    if (new URL(page.url()).origin !== expected.origin) throw new Error('navigation');
+    if (new URL(await page.url()).origin !== expected.origin) throw new Error('navigation');
     await password.fill(pairs[pairIndex].password);
     return { filled: true, values_omitted: true };
   } catch {
     // Browser exceptions can embed fill arguments; never propagate their raw messages.
     throw new Error('Safe Workday fill failed. Verify authorized origin, observed controls and local file; values omitted.');
   }
+}
+
+// Codex's supported tab API has asynchronous url() and a playwright locator surface.
+// Keep the tab handle in its approved runtime; never open an arbitrary debug port.
+export function hostBrowserPage(tab) {
+  if (typeof tab?.url !== 'function' || typeof tab?.playwright?.locator !== 'function') {
+    throw new Error('Supported host tab APIs are unavailable; use manual login. Values omitted.');
+  }
+  return { url: () => tab.url(), locator: selector => tab.playwright.locator(selector) };
 }
 
 // Keep this object in the approved browser runtime for the ENTIRE run, across jobs.

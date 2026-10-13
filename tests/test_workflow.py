@@ -340,6 +340,8 @@ class WorkflowTests(unittest.TestCase):
         cli('preferences-update',payload={'targets':['operations'],'submission_policy':'per-application'})
         cli('checkpoint','preferences')
         cli('role-create',payload={'id':'operations','title':'Operations Manager','focus':['Service execution']})
+        self.assertTrue((root/'.claude/skills/career-resume-operations/SKILL.md').is_file())
+        self.assertFalse((root/'.agents/skills/career-resume-operations').exists())
         self.assertTrue((root/'.career-assistant/routes/operations.md').is_file())
         cli('checkpoint','roles');cli('checkpoint','automation')
         cli('assess',payload=assessment(self.s))

@@ -8,10 +8,12 @@ and run applications you authorize. 中文或英文对话均可，简历输出�
 固定简历模板和虚构测试材料。个人职业知识、偏好、岗位 routes 和 resume-tailor
 skills，由用户下载后在自己的本地工作区逐步完善；这些内容不回写到共享源码或发布包。
 
-**v0.1.6 验收状态：开发预览，尚未达到双宿主完整公开发布标准。**
+**v0.1.7 验收状态：开发预览，尚未达到双宿主完整公开发布标准。**
 核心、安装、模拟投递和 PDF 已验证；Codex 的旧 CLI 与测试启动参数问题已修复，
 实际初始化、事实保存、续接、私人 routes/skill 生成调用和一页 PDF 试跑已通过。
-Claude Code 暂缓验证，此前 OAuth 401 尚未处理。真实投递仍须在用户自己的环境核实。
+新增 Windows/Linux 普通权限冷启动验证，以及 Codex 内置浏览器中的模拟登录、上传、
+授权提交、确认回写和不确定结果续接。macOS 尚未实机验证；Claude Code 暂缓，
+此前 OAuth 401 尚未处理。真实 Workday 等网站仍须在用户自己的环境核实。
 详细证据和复测步骤见 [验收记录](docs/VALIDATION.md)。
 
 ## 下载后的第一步 / Start here
@@ -38,22 +40,25 @@ python install.py --host both --workspace <your-career-workspace>
 Codex 使用 `.agents/skills/`，Claude Code 使用 `.claude/skills/`。
 已有不同版本时安装器停止；检查差异后用 `--replace` 备份再替换。
 若新 skill 未出现在列表中，重新打开会话；当前对话也可按文件读取并执行它。
-升级已有安装时，助手检查差异后运行 `python install.py --host both --replace`，旧版会备份。
+升级已有安装时，助手按当前宿主检查并运行 `python install.py --host codex --replace`
+或对应的 claude/both 选项，旧版会备份。
 也可显式调用 Codex 的
 `$career-assistant` 或 Claude Code 的 `/career-assistant`。
 
 ### 基础环境
 
-核心建档脚本仅需 Python 3.10+，无需 API 密钥或单独的模型服务。
-你需要自己可用的 Codex 或 Claude Code 账户。PDF 功能另需
+核心建档脚本仅需 Python 3.10+（可使用宿主提供的本地运行时），无需 API 密钥或
+单独的模型服务。你需要自己可用的 Codex 或 Claude Code 账户。PDF 功能另需
 [Tectonic](https://tectonic-typesetting.github.io/en-US/install.html) 与以下 Python 包：
 
 ```text
-python -m pip install -r requirements.txt
-python skills/career-assistant/scripts/career.py doctor
+python skills/career-assistant/scripts/career.py doctor --host codex --probe-writes
 ```
 
 如果缺少 PDF 或浏览器工具，仍可先完成资料收集；助手会解释后续缺少什么。
+PDF 依赖安装在本项目的 `.venv`，直接调用其中的 Python，不需要管理员权限或修改
+PowerShell 执行策略。首次 TeX 下载失败或缺缓存时，简历保留为 draft。
+新电脑的具体引导见 [冷启动说明](docs/COLD_START.md)。
 若需要文件路径、Python 安装或权限方面的帮助，直接把错误告诉助手。
 Codex 初始化被拒绝时，先看 [Codex 权限与 CLI 排查](docs/CODEX_SETUP.md)。
 验收脚本会保留本机 Windows 沙箱配置；PATH 选到旧版 CLI 时可用 `--executable` 指定已验证的版本。
@@ -102,8 +107,8 @@ Codex 初始化被拒绝时，先看 [Codex 权限与 CLI 排查](docs/CODEX_SET
 再为选定方向创建 `.career-assistant/routes/<方向>.md`，内容包含该方向的经历重点、
 写作指导和 JD 来源。文档只保存在被忽略的私人目录中，续接时保留已有内容。
 
-对应的个人岗位 skill 生成在 `.agents/skills/career-resume-<方向>/` 和
-`.claude/skills/career-resume-<方向>/`，会读取私人 routes 文档、最新偏好和事实来源，
+对应的个人岗位 skill 按选定宿主生成在 `.agents/skills/career-resume-<方向>/` 或
+`.claude/skills/career-resume-<方向>/`；要求两个宿主时生成两份。它会读取私人 routes、最新偏好和事实来源，
 不在 skill 中复制姓名、联系方式或工作经历。可以直接说“调用我的 software 岗位 skill
 给这份 JD 评分并生成简历”；助手也会在方向匹配时读取相应个人 skill。
 
@@ -157,6 +162,10 @@ Workday 可以沿用本地文件登录。助手会创建：
 关闭后重新打开，待核查的申请仍保持 Needs user；只有确认页面证据匹配原尝试后才转为 Submitted。
 申请状态命令同时提供各状态数量和下一步操作。
 
+Codex 内置浏览器的真实模拟流程见 [宿主浏览器验收说明](docs/HOST_BROWSER_VALIDATION.md)。
+批量操作保留同一个工作标签页；新标签或新会话先检查登录状态，不假定会继承。
+重新登录后应核查原申请记录，结果未明的申请不能因为换了会话就重新提交。
+
 ## 我的数据保存在哪里？
 
 全部保存在当前职业工作区的 **`.career-assistant/`**，包括来源、档案、偏好、
@@ -177,6 +186,6 @@ Workday 可以沿用本地文件登录。助手会创建：
 MIT 许可见 [LICENSE](LICENSE)；第三方宿主、浏览器和 LaTeX 依赖遵循各自许可。
 
 维护者审核更改后运行 `python release.py manifest`、`python release.py verify` 和
-`python release.py pack --output outputs/career-assistant-v0.1.6.zip`。
+`python release.py pack --output outputs/career-assistant-v0.1.7.zip`。
 打包命令同时生成 `START_HERE.txt`、ZIP 的 `.sha256` 文件与 `SHA256SUMS.txt`。
 只分发这些发布文件；测试日志、用户档案、凭据、安装副本和个人 skills 均不在 ZIP 中。

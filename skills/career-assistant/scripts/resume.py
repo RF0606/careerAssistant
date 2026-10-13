@@ -97,14 +97,17 @@ def render(store, job_id, draft, compile_pdf=True):
         compiler = shutil.which('tectonic')
         if not compiler:
             raise ValueError('Tectonic is missing. Source saved as draft; follow references/setup.md')
-        p = subprocess.run([compiler, '--keep-logs', '--outdir', str(package), str(package / 'resume.tex')], capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=180)
-        (package / 'compile-output.txt').write_text(p.stdout + p.stderr, encoding='utf-8')
-        if p.returncode or not (package / 'resume.pdf').exists() or 'Missing character:' in p.stdout + p.stderr:
-            raise ValueError('Compilation failed or glyphs are missing; inspect compile-output.txt')
         try:
             import fitz
-        except ImportError:
-            raise ValueError('PDF QA needs PyMuPDF. PDF exists but is not verified.') from None
+        except (ImportError, OSError):
+            raise ValueError('PDF QA needs PyMuPDF in this Python environment. Source saved as draft; install PDF dependencies in the workspace .venv before compiling.') from None
+        try:
+            p = subprocess.run([compiler, '--keep-logs', '--outdir', str(package), str(package / 'resume.tex')], capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=180)
+        except subprocess.TimeoutExpired:
+            raise ValueError('PDF compilation timed out. Source saved as draft; check Tectonic and first-run TeX bundle network/cache access before retrying.') from None
+        (package / 'compile-output.txt').write_text(p.stdout + p.stderr, encoding='utf-8')
+        if p.returncode or not (package / 'resume.pdf').exists() or 'Missing character:' in p.stdout + p.stderr:
+            raise ValueError('Compilation failed or glyphs are missing; inspect compile-output.txt. First-run TeX downloads may need network access. The package remains draft.')
         doc = fitz.open(package / 'resume.pdf')
         extracted = '\n'.join(page.get_text() for page in doc)
         pages = len(doc)

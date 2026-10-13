@@ -1,4 +1,91 @@
-# v0.1.6 acceptance — 2026-10-13 (America/New_York)
+# v0.1.7 acceptance — 2026-10-13 (America/New_York)
+
+This section is the current status; earlier dated sections retain historical evidence.
+
+## Cold start and ordinary permissions
+
+Doctor now reports feature availability, safe next actions and the active interpreter.
+Optional write probes identify private/selected-host path failures without generating
+routes or facts; an OS probe cannot override or certify host command policy.
+The offline-only PDF smoke check detects an empty TeX cache without downloads or
+false resume readiness. PDF packages use a project .venv, invoked directly without
+activation/admin access. Existing compatible environments are reused. PDF rendering
+checks PyMuPDF before invoking the compiler/downloads, and timeouts keep a draft.
+Both main CLI and installer reject Python below 3.10 before writing user state.
+New role creation infers the active installation host (canonical source defaults
+to Codex); refresh preserves the saved host list unless explicitly overridden.
+Both copies require a selected both-host scope. Missing browsers/PDF tools do not block core onboarding.
+
+Actual Windows Python 3.13.1 and Linux Python 3.12.15 cold runs passed with a new
+venv containing no pip/PDF packages and an empty optional-tool PATH. Text-source
+facts, private role generation, scoring and source-only rendering worked; missing
+compiler/QA failures preserved the profile and never produced a ready PDF.
+Windows was not elevated; Linux ran as UID 1000 with no sudo. Linux's existing
+3.8.10 produced the intended early version error. A supported test interpreter was
+installed only under ignored test-results using an official PyPI uv binary; no
+system interpreter, shell profile or global dependency was changed.
+A real Tectonic --only-cached check with a new empty cache returned cache-unverified.
+macOS instructions are provided, but no Mac was available for an actual run.
+
+## Actual Codex browser mock workflow
+
+The current Codex In-app Browser, controlled through its documented runtime APIs,
+passed a supervised local fixture: random fictional credential file read in memory,
+login, actual one-page PDF upload through the file chooser, explicit scoped grants,
+prepare/begin-submit, observed confirmation and tracker update. A second upload
+deliberately returned an ambiguous response. A fresh helper process preserved
+Needs user and rejected repeat prepare/submit. After closing/reopening the browser,
+a new authentication context required login; Candidate Home then showed the
+original receipt. Observed job/receipt/PDF hashes reconciled the original attempt.
+**Two mock jobs became Submitted, with one final POST and one attempt each.**
+The profile hash was unchanged, uploaded bytes matched the reviewed PDFs, and the
+random fixture password was absent from JSON artifacts. A separate visible CAPTCHA
+page stopped before credentials were filled or Sign in clicked.
+
+The production helper now awaits async page URLs and provides hostBrowserPage(tab)
+for the documented tab.playwright surface. Its HTTPS/tenant guard rejected the
+loopback page in the actual host before loading credentials. The positive host
+loopback flow deliberately uses the production reader plus a separate test-only
+adapter; it does not relax production origin checks or prove live Workday behavior.
+Automated HTTPS mock tests cover the async adapter and stopping before password
+fill after navigation. Credential paths are resolved before reading; a junction/
+symlink escaping the ignored Workday directory is rejected. No fill values were
+printed by the test calls, request logging was disabled and no tracing was requested.
+
+The initial Windows fixture failed once at atomic tracker replacement with
+PermissionError; its failed workspace was retained, and a fresh fixture succeeded
+without changing permissions. The host DOM API did not expose FileList for a
+pre-submit inspection; the supported chooser succeeded and backend receipt hashes
+provided actual byte evidence. The fixture initially persisted its login counter
+only on submission; it now flushes after login too. Both UI-observed authentication
+contexts are recorded separately from that earlier counter snapshot, with backend
+regression coverage for reauthentication persistence.
+
+## Current verification and limits
+
+- Windows and Linux full suites: **75 Python tests passed on each**, with 9 added
+  cold-start/backend/host-selection guards. Linux ran as an ordinary user under
+  Python 3.12.15. Core and both installation-copy workflows are covered.
+- **21 automated browser scenarios passed**, plus the separate actual IAB mock
+  login/upload/confirmation, uncertain-result recovery and CAPTCHA handoff above.
+- Actual reviewed PDFs remain one-page Letter with Projects absent. The shared
+  template hash remains `0fb02c175f5366a5f687fd65fd911f3b11ece8111cc273f000b25bf828591915`.
+- Private evidence: `test-results/v0.1.7-cold-browser/`, including cold/cache results
+  and the successful host fixture's host-browser-checks.json, screenshots and
+  original confirmation observations. Failed fixtures remain ignored and preserved.
+
+Reproduction: [cold start](COLD_START.md), [host browser](HOST_BROWSER_VALIDATION.md).
+Final release checks verify allowlisted ZIP contents/hashes, clean extraction,
+both host installations, unit/browser suites and optional Projects PDF layout.
+
+Still a **development preview**: macOS actual cold-start, Claude Code conversations
+and live Workday/employer submissions remain unverified. The user's Claude deferral
+is unchanged. Source/helper and supervised host-browser checks here complement the
+earlier Codex natural-language onboarding evidence; this is not a new dual-host
+conversation acceptance run. Standard software only is shipped; all user knowledge,
+credentials, private routes/skills and local test artifacts remain excluded.
+
+## Previous v0.1.6 acceptance — 2026-10-13
 
 ## Personal skill generation and recovery
 
@@ -314,7 +401,7 @@ After source review, update the manifest and create the delivery files:
 ```text
 python release.py manifest
 python release.py verify
-python release.py pack --output outputs/career-assistant-v0.1.6.zip
+python release.py pack --output outputs/career-assistant-v0.1.7.zip
 ```
 
 Extract the final ZIP into a new folder. Verify the manifest there, install both

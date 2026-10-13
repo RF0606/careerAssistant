@@ -7,6 +7,9 @@ import shutil
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
+if sys.version_info < (3, 10):
+    print(json.dumps({'error': 'Python 3.10+ is required. Select a supported interpreter or install it from python.org; no skill was installed.'}), file=sys.stderr)
+    sys.exit(1)
 
 SOURCE = Path(__file__).resolve().parent / 'skills' / 'career-assistant'
 
@@ -66,3 +69,5 @@ if __name__ == '__main__':
         print(json.dumps(install(args.workspace,args.host,args.scope,args.replace),ensure_ascii=False,indent=2))
     except ValueError as exc:
         raise SystemExit(str(exc))
+    except OSError as exc:
+        raise SystemExit(f'Local installation failed ({type(exc).__name__}) at {exc.filename or "the requested path"}. Allow workspace/skill-folder writes or resolve the path conflict; existing user data is preserved.') from None

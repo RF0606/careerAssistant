@@ -1,13 +1,26 @@
 # Setup and capability detection
 
-Core helpers require Python 3.10+. They use the standard library for storage,
+Core helpers require Python 3.10+. Select an existing supported python, python3,
+py -3 or host-provided local runtime first; use its absolute path if PATH selects
+an older version. If none exists, explain installation from python.org and do not
+claim saved initialization. Helpers use the standard library for storage,
 DOCX/text import and scoring. PDF import needs pypdf; PDF verification/rendering
 needs PyMuPDF; generation needs the Tectonic executable on PATH. In the project
-use `python -m pip install -r requirements.txt`. When only the skill folder was
-installed use `python -m pip install "pypdf>=5,<7" "PyMuPDF>=1.25,<2"`.
+create a project .venv with `python -m venv .venv` or reuse a compatible existing
+one. Invoke its Python directly: `.venv/Scripts/python.exe` on Windows,
+`.venv/bin/python` on macOS/Linux. Use it with `-m pip install -r requirements.txt`;
+for a standalone skill use `-m pip install "pypdf>=5,<7" "PyMuPDF>=1.25,<2"`.
+Activation/administrator access is unnecessary. Preserve global configuration.
 Find Tectonic setup at https://tectonic-typesetting.github.io/en-US/install.html.
 Tectonic may download its TeX bundle on first compilation. Do not silently claim
 offline PDF generation before that cache exists. Missing tools leave sources as drafts.
+
+doctor reports per-feature availability and next_actions. --probe-writes tests
+private data and selected --host skill paths without creating facts or routes;
+host command policy is separate. --pdf-smoke uses --only-cached for a small
+non-personal probe, with no downloads. Failure leaves cache unverified, not ready.
+Missing browser/PDF tools do not block text/DOCX onboarding, roles or scoring.
+For a PDF without import capability, offer local dependencies or real text input.
 
 `python install.py --host codex|claude|both --workspace <root>` installs the project
 skill copies. `--scope user` uses the user's skill folders. No system/global config
