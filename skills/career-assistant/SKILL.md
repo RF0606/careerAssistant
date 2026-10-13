@@ -39,6 +39,9 @@ promote them into shared references or publish them as default knowledge.
   then creates their private route documents and corresponding personal skills.
   If an older personal skill has no private guide or refers to an old bundled guide,
   regenerate it with role-create from its selected role configuration.
+  If generation is pending or an installed skill is missing, follow onboarding's
+  role-retry recovery. Do not claim this step complete until the helper verifies
+  every requested host's skill.
 - Explicit applications: read [applications](references/applications.md) and the
   relevant [platform guide](references/platforms.md). Initialization is not submission authorization.
 - Installation or missing tools: read [setup](references/setup.md).

@@ -8,7 +8,7 @@ and run applications you authorize. 中文或英文对话均可，简历输出�
 固定简历模板和虚构测试材料。个人职业知识、偏好、岗位 routes 和 resume-tailor
 skills，由用户下载后在自己的本地工作区逐步完善；这些内容不回写到共享源码或发布包。
 
-**v0.1.5 验收状态：开发预览，尚未达到双宿主完整公开发布标准。**
+**v0.1.6 验收状态：开发预览，尚未达到双宿主完整公开发布标准。**
 核心、安装、模拟投递和 PDF 已验证；Codex 的旧 CLI 与测试启动参数问题已修复，
 实际初始化、事实保存、续接、私人 routes/skill 生成调用和一页 PDF 试跑已通过。
 Claude Code 暂缓验证，此前 OAuth 401 尚未处理。真实投递仍须在用户自己的环境核实。
@@ -94,7 +94,9 @@ Codex 初始化被拒绝时，先看 [Codex 权限与 CLI 排查](docs/CODEX_SET
 7. **JD 试跑**：看一次评分、简历和缺口，修正后开始日常使用。
 
 可跳过非必需问题，关闭后继续。重复“初始化”会恢复进度，不清空已有档案。
-确认过的经历不会被悄悄改写。资料更新后，受影响的评分和简历需要刷新。
+确认过的经历不会被悄悄改写。资料、偏好、岗位配置或私人 route 更新后，
+受影响的评分和简历需要重新生成并检查；旧材料不能继续用于投递。
+只修复个人 skill 安装、没有改变岗位内容时，不会让已有评分失效。
 
 项目不会预装个人岗位 routes。初始化时，助手先询问目标岗位和求职偏好，
 再为选定方向创建 `.career-assistant/routes/<方向>.md`，内容包含该方向的经历重点、
@@ -104,6 +106,12 @@ Codex 初始化被拒绝时，先看 [Codex 权限与 CLI 排查](docs/CODEX_SET
 `.claude/skills/career-resume-<方向>/`，会读取私人 routes 文档、最新偏好和事实来源，
 不在 skill 中复制姓名、联系方式或工作经历。可以直接说“调用我的 software 岗位 skill
 给这份 JD 评分并生成简历”；助手也会在方向匹配时读取相应个人 skill。
+
+生成中途失败时，助手会保留岗位配置、route 和安装进度，说明缺失文件及具体
+写入问题；所有选定宿主的个人 skill 均通过文件校验后，才完成岗位配置这一步。
+修复权限或路径冲突后，直接说“继续初始化”，助手即可从已保存的进度重试。
+旧版本没有安装记录的岗位需要刷新；旧评分没有岗位指纹时需要重新评分，
+升级不会清空已有资料。已经点击提交但结果未明的申请仍须核查原尝试，不能重复提交。
 
 ## 简历格式
 
@@ -169,6 +177,6 @@ Workday 可以沿用本地文件登录。助手会创建：
 MIT 许可见 [LICENSE](LICENSE)；第三方宿主、浏览器和 LaTeX 依赖遵循各自许可。
 
 维护者审核更改后运行 `python release.py manifest`、`python release.py verify` 和
-`python release.py pack --output outputs/career-assistant-v0.1.5.zip`。
+`python release.py pack --output outputs/career-assistant-v0.1.6.zip`。
 打包命令同时生成 `START_HERE.txt`、ZIP 的 `.sha256` 文件与 `SHA256SUMS.txt`。
 只分发这些发布文件；测试日志、用户档案、凭据、安装副本和个人 skills 均不在 ZIP 中。

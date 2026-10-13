@@ -1,5 +1,5 @@
 {
-  "version": "0.1.5",
+  "version": "0.1.6",
   "files": {
     ".gitattributes": {
       "sha256": "c18a2d17cc6f71c9b5c0b3d45f87eb903e18e2f8afc517f2f6f4ad7f3880e10d",
@@ -22,15 +22,15 @@
       "bytes": 1086
     },
     "README.md": {
-      "sha256": "cf5483a0a6d4f3aba1835ca0c2e9173c4aac6de01a8878db51fd6a82b5a9e18f",
-      "bytes": 11313
+      "sha256": "b648ae132a79ef262599a0bcbfc734df15a38060edf56b72e7abcae0785fe869",
+      "bytes": 12047
     },
     "START_HERE_CODEX.md": {
-      "sha256": "d997cf6abc5579a41dd52032f46105dac4e6fd1cd0d83d9c736bb9adfef8520e",
-      "bytes": 5179
+      "sha256": "8ab5b225453329a5f365915d027d598890941cad6d5f5d8d5c10612f7ebcbb74",
+      "bytes": 5339
     },
     "VERSION": {
-      "sha256": "800cf1c0392b24de7c0a1c6ea6778ecb433dec71c49a150bce96a98477527b2f",
+      "sha256": "1f2110568627307becae713f8b808f3d9d912d4b2a24ed6a78605f03f7437d3c",
       "bytes": 6
     },
     "install.py": {
@@ -38,11 +38,11 @@
       "bytes": 3596
     },
     "package-lock.json": {
-      "sha256": "933ab923a69f7b9fcb70863badec6d63b75a7858e67e0dc4426b47b607263d86",
+      "sha256": "8c727a5277e040a7f10731ba8a1cba5672cdfbc79915180bb75d137c60fa53ad",
       "bytes": 1246
     },
     "package.json": {
-      "sha256": "e3afc4a8632e3209f8d4879cc8cea6578520725cb72e039e06800a2bf43dd348",
+      "sha256": "2dc1d7025f31df05ec15f135368fe0fbbae6e47212fd9ce70d11b4c0a38aaf99",
       "bytes": 327
     },
     "release.py": {
@@ -58,8 +58,8 @@
       "bytes": 3622
     },
     "docs/VALIDATION.md": {
-      "sha256": "e0a3011b742e38c3811747ff97774d97a03746583447b031af06362b8acf055e",
-      "bytes": 17001
+      "sha256": "fa709c95261945b594ab0190c68717fd1da8214c9c34e3b62286421f692af0ac",
+      "bytes": 21592
     },
     "examples/README.md": {
       "sha256": "3d482ccb3145d4c71e86c181b40e6e2d7359ceb14f96eff4af66b757e32d4624",
@@ -78,24 +78,24 @@
       "bytes": 3937
     },
     "skills/career-assistant/references/data-interface.md": {
-      "sha256": "a2ad0890fdf8a63795d4f0f75813f768bec41ad84d2fc4fd6de4e73975bf5819",
-      "bytes": 7090
+      "sha256": "c2e909e16684e5b618a875431e39d85b079970d97b725d15f9a256db5a72c11e",
+      "bytes": 8546
     },
     "skills/career-assistant/references/matching.md": {
-      "sha256": "2ac67d01892b3bd91a37ca335fc24a7f2004f48c34a7ad846df226271d274001",
-      "bytes": 2270
+      "sha256": "2b3b657e0670d003099ec8f42957c40c1607bcb4940a1bba8960d74ec0d5320e",
+      "bytes": 2574
     },
     "skills/career-assistant/references/onboarding.md": {
-      "sha256": "0f78418302e513eaefa8bb1890e2c74a10796be85c35f11be69a6e80a2fbcd03",
-      "bytes": 5461
+      "sha256": "189216be0a103478a6cdf4122b0990ba77d3ca6870e1a2079e863fe5c6c6f573",
+      "bytes": 6441
     },
     "skills/career-assistant/references/platforms.md": {
       "sha256": "b9db4b41f899741331ffd988848b5ce61c6ab82bc06d9e7510fd1ca369e9372a",
       "bytes": 1922
     },
     "skills/career-assistant/references/resume.md": {
-      "sha256": "d8d9cb92d8c09bff4cfee34d8eaaed5c256ecea3e0e24e2c28f62b5df9ca9e65",
-      "bytes": 2869
+      "sha256": "9f7e25b9f71d15a4ab53bb38d28dd51cd0cb9ccdd1d711965b074ee67999bcdf",
+      "bytes": 3113
     },
     "skills/career-assistant/references/setup.md": {
       "sha256": "c37008c30d3e6d0e6779da30fe0d8d6f08cf205443ce26d546d6860a27d2c6ae",
@@ -106,32 +106,36 @@
       "bytes": 2993
     },
     "skills/career-assistant/scripts/career.py": {
-      "sha256": "6b8c31b65bef0fec798a42e85bfba85b442571087b5c41cc5f8aa8719907c776",
-      "bytes": 4569
+      "sha256": "32622ca612ac244a9ffc83ceff90e27cb59588edf51064fbbee089069a1defb6",
+      "bytes": 4713
     },
     "skills/career-assistant/scripts/jobs.py": {
-      "sha256": "ec58432a2fcfedde91c10ef8182cc626255c08abfdb4164ab50d626ffd4c2947",
-      "bytes": 14120
+      "sha256": "c37bd2166e57e2a8b25f738785a4f514a5766993b276aa234839bbcd9cbd68d8",
+      "bytes": 15112
     },
     "skills/career-assistant/scripts/local_credentials.mjs": {
       "sha256": "40fbe2b134e6126a1aee7f5b4c280cff17a3cab5a1de4e45e34516607c3e3aef",
       "bytes": 5049
     },
     "skills/career-assistant/scripts/profiles.py": {
-      "sha256": "59ee971a8fe67b4013b8a1510bc2ca850003aaf1f038312ec3926dae6734ce9c",
-      "bytes": 13363
+      "sha256": "98888e33933428ecb5594eb410423ac1d7607caf4cf6e794c89ba37b8b2feb01",
+      "bytes": 14360
     },
     "skills/career-assistant/scripts/resume.py": {
       "sha256": "400d8bf30284f2317bdc14888fdfbf85f8d285138e548d31d29f12c98da9828f",
       "bytes": 10063
     },
+    "skills/career-assistant/scripts/roles.py": {
+      "sha256": "938c4cb64943ab8c06880bf60fa4e0ba6ed5749a6faa50c2d8d68a35c07cef86",
+      "bytes": 3906
+    },
     "skills/career-assistant/scripts/storage.py": {
-      "sha256": "2d4f6f446b5c87dc33ed65194e7c297be31356fa9850c9fa1e95e7fe844aecfb",
-      "bytes": 5700
+      "sha256": "eb47d4d778b17261f8aad4614daa78b746e9cc4fb295ec3f594c9fe9d23a3b6f",
+      "bytes": 6742
     },
     "skills/career-assistant/SKILL.md": {
-      "sha256": "42026b1e1c166e71ec95ee890d648126236fe228311859db774e1087f3ac5dfc",
-      "bytes": 5012
+      "sha256": "eac5bf1e1306843e8ccc503891087571e1244d38296ae334d1bab7032ebf42c5",
+      "bytes": 5206
     },
     "tests/browser_bridge.py": {
       "sha256": "a5095006486bc904af5ad547b99b5ded0c8448e4c5ea695d2b9cac50a893b36d",
@@ -156,6 +160,10 @@
     "tests/test_release.py": {
       "sha256": "400b378ec259bf410b1d8b0ef55417663de4ac296da7b21883600da3452c6e2d",
       "bytes": 4007
+    },
+    "tests/test_role_lifecycle.py": {
+      "sha256": "44ae23568c1b2fddd60365861e5297aeb7f72fcb9a8c43a6b19ac1c59753c654",
+      "bytes": 15099
     },
     "tests/test_workflow.py": {
       "sha256": "6318a109b1908ad45d7588a954aa76b5763c2568f4692917a817b7f1fffe0e5e",

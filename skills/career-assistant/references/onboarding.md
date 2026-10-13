@@ -50,6 +50,18 @@ this stage. Choose conversation language from the user, not the example profile.
    hosts; select one if the user specifies. Never encode personal facts in skills.
    On resume, reuse existing routes; only refresh a direction when its preference,
    guidance or JD context changed or an older config has no generated route.
+   Read status.role_issues and the role's generation record. A partial write leaves
+   generation.status pending, with requested hosts, expected files/hashes and any
+   failed paths. Explain the specific PermissionError or folder/file conflict;
+   ask for host writes only if actually denied, and preserve the saved facts/guide.
+   After the blocker is resolved, run role-retry <id> using saved configuration;
+   it retries missing/changed host files without rewriting the private route or
+   requiring new JSON. Run checkpoint roles only after all requested skills verify.
+   A legacy role lacking an installation record requires role-create with the
+   selected config and host(s). If role/route content changed, review and refresh
+   its confirmed configuration first; a retry must not overwrite an edited guide.
+   Reopening completed onboarding rechecks installation and trial freshness. A
+   broken role returns to roles; a stale trial returns to trial. No facts are reset.
 5. **automation**: explain per-application confirmation versus per-batch approval,
    ask the user to choose, persist submission_policy. This is a preference, not a
    grant to submit. Discover the host browser and offer setup only if needed.

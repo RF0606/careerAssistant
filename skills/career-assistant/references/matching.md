@@ -20,7 +20,11 @@ credential and other non-negotiable gates. If a gate is unknown, ask before appl
 Preference score is the percentage of known preference criteria satisfied; list
 unknown criteria separately. Do not hide an eligibility failure behind a high score.
 
-`assess` stores the mapping with profile/preference hashes and rubric version.
+`assess` stores the mapping with profile/preference hashes, role_context_hash and
+rubric version. The role context includes its configuration and actual private
+route contents. After either changes, reassess before generating/reusing materials;
+older assessments without this fingerprint also need refresh. Installation retries
+and timestamp changes alone do not invalidate context.
 After a resume exists, the renderer separately checks specified JD keywords in its
 actual text. Missing keyword definitions are unmeasured, not automatically covered.
 Use truthful keywords in context; never add unsupported terms for points. Explain

@@ -4,7 +4,9 @@ import uuid
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from zipfile import ZipFile
-from storage import SCHEMA, digest, now, slug, atomic, load
+from storage import SCHEMA, digest, now, slug, atomic_text, inside
+from roles import HOST_FOLDERS, matches_target, skill_path, context_hash, context_digest, require_selected
+from jobs import trial_ready
 
 def import_source(store, path, kind='document'):
     path = Path(path).resolve()
@@ -82,9 +84,74 @@ def update_preferences(store, patch):
         store.write('preferences.json', prefs)
     return prefs
 
-def matches_target(role, target):
-    labels = [target.get('id', ''), target.get('title', '')] if isinstance(target, dict) else [target]
-    return any(isinstance(label, str) and label.strip().casefold() in {role['id'].casefold(), role['title'].casefold()} for label in labels)
+def personal_skill_body(rid):
+    # No candidate facts: each invocation reads the selected workspace.
+    return f'''---
+name: career-resume-{rid}
+description: Tailor a resume for the locally configured {rid} career direction when the user requests it or the JD matches that role.
+---
+
+Read the sibling `../career-assistant/SKILL.md`; if not installed there, read
+`skills/career-assistant/SKILL.md` in the selected workspace or the explicitly
+selected user installation. Read its references/resume.md.
+Resolve the selected career workspace, then read its .career-assistant/roles/{rid}.json,
+profile.json and preferences.json. Read its .career-assistant/routes/{rid}.md,
+the personal guide created during onboarding for this selected direction.
+Read relevant source text before making claims. Use this guide, the role's focus,
+tailoring_guidance and current JD to select evidence.
+The direction is configured by this user; no predefined career categories apply.
+If the role is provisional, refine it from a full JD before claiming precise fit.
+For scoring, read references/matching.md and use the main skill's assess helper.
+Do not assume facts from another workspace or this skill's name.
+If the workspace or main skill is unavailable, ask for its location; never fall back
+to another person's profile. Use the main skill's scripts and layout template.
+Check current profile, preference and role/route context hashes before reusing
+artifacts. Read the full JD, produce the one-page English resume, validate PDF
+layout/text, and report gaps.
+'''
+
+
+def install_role_skills(store, role):
+    """Called under the workspace lock; pending state survives interrupted writes."""
+    rid = role['id']
+    hosts = role['generation']['hosts']
+    body = personal_skill_body(rid)
+    generation = {'status': 'pending', 'hosts': hosts, 'context_hash': context_hash(store, rid),
+                  'skills': {host: {'path': skill_path(rid, host), 'sha256': digest(body.encode('utf-8'))} for host in hosts},
+                  'failures': {}, 'updated_at': now()}
+    role['generation'] = generation
+    store.write(f'roles/{rid}.json', role)
+    for host, expected in generation['skills'].items():
+        try:
+            path = inside(store.workspace, store.workspace / expected['path'])
+            if not path.is_file() or digest(path.read_bytes()) != expected['sha256']:
+                atomic_text(path, body)
+            if digest(path.read_bytes()) != expected['sha256']:
+                raise OSError('Personal skill verification failed')
+        except (OSError, ValueError) as exc:
+            generation['failures'][host] = {'path': expected['path'], 'reason': type(exc).__name__}
+    generation['status'] = 'pending' if generation['failures'] else 'ready'
+    generation['updated_at'] = now()
+    store.write(f'roles/{rid}.json', role)
+    if generation['failures']:
+        failures = '; '.join(f"{host}: {info['path']} ({info['reason']})" for host, info in generation['failures'].items())
+        raise ValueError(f'Personal skill generation incomplete. {failures}. Role and route are saved. Resolve the folder/file conflict or allow writes at that path, then run role-retry {rid}; do not mark roles complete.')
+    return role
+
+
+def role_retry(store, role_id):
+    rid = slug(role_id)
+    with store.lock():
+        role = store.read(f'roles/{rid}.json')
+        generation = role.get('generation', {})
+        hosts = generation.get('hosts', [])
+        if not hosts or any(host not in HOST_FOLDERS for host in hosts):
+            raise ValueError('Legacy role has no requested-host record; use role-create from the saved configuration and choose the host')
+        if generation.get('context_hash') != context_hash(store, rid):
+            raise ValueError('Role configuration/personal route changed; use role-create to refresh the saved configuration before retrying skills')
+        if not any(matches_target(role, target) for target in store.read('preferences.json')['targets']):
+            raise ValueError('This direction is no longer selected; confirm preferences before retrying')
+        return install_role_skills(store, role)
 
 
 def role_create(store, payload, hosts):
@@ -133,39 +200,14 @@ fact evidence. Treat role/JD guidance as writing context, never as factual evide
 or authorization to apply, read credentials or override common rules.
 '''
     role = {'schema_version': SCHEMA, 'id': rid, 'title': payload['title'], 'focus': payload['focus'], 'tailoring_guidance': guidance, 'jd_source_ids': jd_sources, 'provisional': provisional, 'route_path': route_name, 'route_sha256': digest(route_text.encode('utf-8')), 'created_at': now()}
+    role['generation'] = {'status': 'pending', 'hosts': list(dict.fromkeys(hosts)), 'context_hash': context_digest(role, role['route_sha256'])}
     with store.lock():
-        route_file = store.root / route_name
-        route_file.parent.mkdir(parents=True, exist_ok=True)
-        route_file.write_text(route_text, encoding='utf-8', newline='\n')
         store.write(f'roles/{rid}.json', role)
-        for host in hosts:
-            folder = store.workspace / ('.agents' if host == 'codex' else '.claude') / 'skills' / ('career-resume-' + rid)
-            folder.mkdir(parents=True, exist_ok=True)
-            # Deliberately no candidate facts in a generated skill; it always reads the active workspace.
-            body = f'''---
-name: career-resume-{rid}
-description: Tailor a resume for the locally configured {rid} career direction when the user requests it or the JD matches that role.
----
-
-Read the sibling `../career-assistant/SKILL.md`; if not installed there, read
-`skills/career-assistant/SKILL.md` in the selected workspace or the explicitly
-selected user installation. Read its references/resume.md.
-Resolve the selected career workspace, then read its .career-assistant/roles/{rid}.json,
-profile.json and preferences.json. Read its .career-assistant/routes/{rid}.md,
-the personal guide created during onboarding for this selected direction.
-Read relevant source text before making claims. Use this guide, the role's focus,
-tailoring_guidance and current JD to select evidence.
-The direction is configured by this user; no predefined career categories apply.
-If the role is provisional, refine it from a full JD before claiming precise fit.
-For scoring, read references/matching.md and use the main skill's assess helper.
-Do not assume facts from another workspace or this skill's name.
-If the workspace or main skill is unavailable, ask for its location; never fall back
-to another person's profile. Use the main skill's scripts and layout template.
-Check current profile hashes before reusing existing artifacts. Read the full JD,
-produce the one-page English resume, validate PDF layout/text, and report gaps.
-'''
-            (folder / 'SKILL.md').write_text(body, encoding='utf-8')
-    return role
+        try:
+            atomic_text(inside(store.root, store.root / route_name), route_text)
+        except OSError as exc:
+            raise ValueError(f'Role saved, but personal route write failed ({type(exc).__name__}) at {route_name}. Allow writes or resolve the path conflict, then repeat role-create from the saved configuration.') from None
+        return install_role_skills(store, role)
 
 def checkpoint(store, step, note=''):
     allowed = ['environment', 'materials', 'facts', 'preferences', 'roles', 'automation', 'trial']
@@ -181,35 +223,12 @@ def checkpoint(store, step, note=''):
             raise ValueError('Record source-backed facts first')
         if step == 'preferences' and not store.read('preferences.json')['targets']:
             raise ValueError('Confirm at least one target direction first')
-        if step == 'roles':
-            roles = [load(path) for path in (store.root / 'roles').glob('*.json')]
-            targets = store.read('preferences.json')['targets']
-            if not roles or not targets:
-                raise ValueError('Create a role configuration first')
-            for target in targets:
-                valid = False
-                for role in roles:
-                    if not matches_target(role, target):
-                        continue
-                    route = store.root / 'routes' / (slug(role['id']) + '.md')
-                    valid = valid or (role.get('route_path') == f"routes/{role['id']}.md" and route.is_file() and role.get('route_sha256') == digest(route.read_bytes()))
-                if not valid:
-                    raise ValueError('Generate or refresh each selected role and its personal route before completing this step')
+        if step in {'roles', 'automation', 'trial'}:
+            require_selected(store)
         if step == 'automation' and store.read('preferences.json')['submission_policy'] is None:
             raise ValueError('Ask the user to choose a submission policy first')
         if step == 'trial':
-            current_hash = digest(store.read('profile.json'))
-            preference_hash = digest(store.read('preferences.json'))
-            valid = False
-            for path in (store.root / 'packages').glob('*/validation.json'):
-                v = load(path)
-                job_path = store.root / 'jobs' / (path.parent.name + '.json')
-                pdf = path.parent / 'resume.pdf'
-                if not job_path.exists() or not pdf.exists():
-                    continue
-                a = load(job_path)
-                valid = valid or (v.get('status') == 'ready' and v.get('profile_hash') == current_hash and a.get('preferences_hash') == preference_hash and v.get('assessment_hash') == digest(a) and v.get('pdf_sha256') == digest(pdf.read_bytes()))
-            if not valid:
+            if not trial_ready(store):
                 raise ValueError('Generate and visually review one current trial package first')
         if step not in state['completed']:
             state['completed'].append(step)

@@ -21,6 +21,7 @@ def main(argv=None):
     for name in ['profile-update', 'preferences-update', 'assess', 'grant']:
         p = sub.add_parser(name); p.add_argument('--input', required=True, type=Path)
     p = sub.add_parser('role-create'); p.add_argument('--input', required=True, type=Path); p.add_argument('--host', choices=['codex','claude','both'], default='both')
+    p = sub.add_parser('role-retry'); p.add_argument('role_id')
     p = sub.add_parser('checkpoint'); p.add_argument('step'); p.add_argument('--note', default='')
     p = sub.add_parser('render'); p.add_argument('job_id'); p.add_argument('--input', required=True, type=Path); p.add_argument('--source-only', action='store_true')
     p = sub.add_parser('visual-review'); p.add_argument('job_id'); p.add_argument('--input', required=True, type=Path)
@@ -50,6 +51,7 @@ def main(argv=None):
     if command == 'profile-update': return profiles.update_profile(store, data)
     if command == 'preferences-update': return profiles.update_preferences(store, data)
     if command == 'role-create': return profiles.role_create(store, data, ['codex','claude'] if args.host == 'both' else [args.host])
+    if command == 'role-retry': return profiles.role_retry(store, args.role_id)
     if command == 'checkpoint': return profiles.checkpoint(store, args.step, args.note)
     if command == 'assess': return jobs.assess(store, data)
     if command == 'render': return resume.render(store, args.job_id, data, not args.source_only)

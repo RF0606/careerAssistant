@@ -9,7 +9,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = '0.1.5'
+VERSION = '0.1.6'
 SCHEMA = 1
 PRIVATE = '.career-assistant'
 SECRET_KEYS = {'password', 'passwd', 'access_token', 'refresh_token', 'api_key', 'client_secret', 'cookies', 'otp', 'sin', 'ssn', 'passport_number'}
@@ -31,6 +31,20 @@ def atomic(path, value):
         with os.fdopen(fd, 'w', encoding='utf-8', newline='\n') as stream:
             json.dump(value, stream, ensure_ascii=False, indent=2)
             stream.write('\n')
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp, path)
+    finally:
+        if os.path.exists(temp):
+            os.unlink(temp)
+
+def atomic_text(path, text):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp = tempfile.mkstemp(prefix='.' + path.name, dir=path.parent)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8', newline='\n') as stream:
+            stream.write(text)
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temp, path)
@@ -115,9 +129,20 @@ class Store:
         return self.status()
 
     def status(self):
+        from roles import selected_issues
+        from jobs import trial_ready
         steps = ['environment', 'materials', 'facts', 'preferences', 'roles', 'automation', 'trial']
         state = self.read('onboarding.json')
+        role_issues = selected_issues(self)
+        invalid = []
+        if 'roles' in state['completed'] and role_issues:
+            invalid = [s for s in ['roles', 'automation', 'trial'] if s in state['completed']]
+        elif 'trial' in state['completed'] and not trial_ready(self):
+            invalid = ['trial']
+        if invalid:
+            state['completed'] = [s for s in state['completed'] if s not in invalid]
+            state['invalidated_steps'] = invalid
         profile = self.read('profile.json')
         tracker = self.read('tracker.json')
         counts = {status: sum(row['status'] == status for row in tracker['records']) for status in ['Pending', 'Needs user', 'Blocked', 'Submitted']}
-        return {'version': VERSION, 'workspace': str(self.workspace), 'profile_revision': profile['revision'], 'fact_count': len(profile['facts']), 'next_step': next((s for s in steps if s not in state['completed']), 'complete'), 'progress': state, 'applications': {'total': len(tracker['records']), 'counts': counts, 'next_actions': [{'id': row['id'], 'status': row['status'], 'next_action': row['next_action']} for row in tracker['records'] if row['status'] != 'Submitted']}}
+        return {'version': VERSION, 'workspace': str(self.workspace), 'profile_revision': profile['revision'], 'fact_count': len(profile['facts']), 'next_step': next((s for s in steps if s not in state['completed']), 'complete'), 'progress': state, 'role_issues': role_issues, 'applications': {'total': len(tracker['records']), 'counts': counts, 'next_actions': [{'id': row['id'], 'status': row['status'], 'next_action': row['next_action']} for row in tracker['records'] if row['status'] != 'Submitted']}}

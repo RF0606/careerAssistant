@@ -1,4 +1,78 @@
-# v0.1.5 acceptance — 2026-10-12 (America/New_York)
+# v0.1.6 acceptance — 2026-10-13 (America/New_York)
+
+## Personal skill generation and recovery
+
+Previously role-create saved a role and route before installing its host skills.
+A folder/file conflict or denied write could leave a partial installation, while
+checkpoint roles still accepted the route alone. Generation now persists pending
+state before installation, requested hosts, expected paths/hashes and sanitized
+failure types. Route/skill files use atomic replacement. All requested host files
+must match their expected hashes before generation becomes ready or the roles
+checkpoint passes. Automation/trial cannot bypass an incomplete selected role.
+
+role-retry reads the saved configuration and host selection, repairs missing or
+changed skill files, and preserves the private route and confirmed profile. A
+changed role/route requires a reviewed role-create refresh instead. Status/init
+rechecks completed installations and reports role_issues, invalidated_steps and
+the effective next step without deleting historical checkpoints. Older roles
+without a generation record require refresh; no personal data is reset.
+
+Regression checks cover failure on either host, PermissionError, interrupted
+pending state, removed/changed skills, legacy records, CLI JSON errors and retry
+without an input JSON. Both folder-conflict cases recover the requested pair of
+host files while preserving facts, preferences, sources and the private guide.
+These are fictional helper tests, not new Claude Code conversation acceptance.
+
+## Role and private-route freshness
+
+Previously only profile/preferences were bound to an assessment. Changing role
+focus/guidance or the private route could leave an old ready package usable.
+Assessments now store role_context_hash from the role configuration and actual
+route bytes. Creation timestamps and installation progress are excluded, so a
+no-op regeneration or installation repair keeps unchanged context valid.
+
+Changed context rejects rendering, visual review, application-add, prepare,
+begin-submit and trial completion. Reassessment alone cannot validate an old
+resume or prepared attempt: regenerate and actually review the PDF. Legacy
+assessments without this fingerprint need refresh. Changes to another role do
+not invalidate an unaffected package. Submitted/uncertain attempt history stays
+intact, and an original uncertain click can still be reconciled with observed
+confirmation evidence after the role changes; it cannot be clicked again.
+
+## Current checks and evidence
+
+- **66 Python tests passed**, including 15 new role-lifecycle regressions and all
+  existing onboarding, installed-helper, application and release-boundary tests.
+- **18 mock browser scenarios passed**, including in-memory fictional Workday
+  login through confirmed submission. No real accounts or applications were used.
+- Main skill frontmatter validation passed with Python UTF-8 mode. The validator's
+  first default-encoding invocation failed under Windows GBK; no source was corrupt.
+- A real Tectonic build from fictional Operations data passed one-page Letter,
+  bounds, section and UTF-8 extraction checks. The generated PNG was opened and
+  inspected: original layout, legible text, correct section order, no clipping or
+  overlap, Projects absent. Visual review and the trial checkpoint passed before
+  role modification. A subsequent role change rejected review of that actual PDF
+  and returned onboarding to trial. Its PDF SHA-256 is
+  `e7a2459d9e8cc447aced8c351b6e51d5a03abe02b231302641633ff559290a96`.
+- Private evidence is under `test-results/v0.1.6-role-fixes/`; unit PDF stubs are
+  explicitly labelled guard fixtures and are not PDF acceptance evidence.
+
+The fixed template SHA-256 remains
+`0fb02c175f5366a5f687fd65fd911f3b11ece8111cc273f000b25bf828591915`.
+The release contains only standard software/workflows and fictional test material;
+personal roles, routes, generated skills and acceptance workspaces stay ignored.
+
+Final-bundle checks use a new extracted directory: verify the manifest, install
+both host copies, rerun the Python/mock browser suites and compile/inspect the
+requested Projects variant. Check the exact ZIP, startup file and SHA256SUMS.txt;
+keep the local release-check results with the private evidence above.
+
+This remains a **development preview**. Actual Codex conversation acceptance below
+is prior evidence; this patch was tested through helpers/installed CLI copies and
+real PDF checks, not another model conversation run. Claude Code conversations
+remain deferred by the owner, and real website submissions remain unverified.
+
+## Previous v0.1.5 acceptance — 2026-10-12
 
 ## Standard-only distribution boundary
 
@@ -240,7 +314,7 @@ After source review, update the manifest and create the delivery files:
 ```text
 python release.py manifest
 python release.py verify
-python release.py pack --output outputs/career-assistant-v0.1.5.zip
+python release.py pack --output outputs/career-assistant-v0.1.6.zip
 ```
 
 Extract the final ZIP into a new folder. Verify the manifest there, install both

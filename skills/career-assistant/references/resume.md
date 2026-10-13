@@ -41,4 +41,7 @@ The package stores JD_snapshot.md, resume.tex, resume.pdf, draft.json, matching
 report and validation.json under the private workspace. Only status ready means
 automated and visual QA passed against the current profile/assessment. A failed
 or source-only build remains draft and is never uploaded automatically.
+The assessment also binds the current role configuration and private route. If
+either changes, reassess and regenerate/review the resume before reuse. A stored
+ready label alone does not establish current validity; helpers recheck the context.
 

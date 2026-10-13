@@ -12,6 +12,7 @@ python <skill>/scripts/career.py --workspace <root> profile-update --input <priv
 python <skill>/scripts/career.py --workspace <root> preferences-update --input <private-json>
 python <skill>/scripts/career.py --workspace <root> checkpoint <stage> --note <brief-note>
 python <skill>/scripts/career.py --workspace <root> role-create --input <private-json> --host both
+python <skill>/scripts/career.py --workspace <root> role-retry <role-id>
 python <skill>/scripts/career.py --workspace <root> assess --input <private-json>
 python <skill>/scripts/career.py --workspace <root> render <job-id> --input <private-draft-json>
 python <skill>/scripts/career.py --workspace <root> visual-review <job-id> --input <private-review-json>
@@ -53,6 +54,16 @@ skill with role-create from its selected config if it has no private guide.
 Generated skills read the current private route, preferences and facts; guidance
 does not serve as factual evidence or grant submission permission.
 
+The role's generation record stores status pending/ready, requested hosts, each
+skill's relative path/SHA-256, context_hash and sanitized failures (path and error
+type only). Writes are atomic per file; interrupted generation stays pending.
+role-retry reads the saved role and host selection, repairs installation only,
+and returns ready after verifying every file. It rejects changed role/route context
+and unselected directions. Resolve write permissions/path conflicts before retrying.
+Checkpoint roles, automation and trial require complete selected-role installations.
+Status reports role_issues and invalidated_steps for previously completed steps;
+these are computed from current files without deleting historical checkpoints.
+
 ## Assessment
 
 Input has job, requirements, eligibility, preference_matches:
@@ -69,6 +80,15 @@ Input has job, requirements, eligibility, preference_matches:
 No direct match without usable evidence IDs. Eligibility/preference results are
 yes/no/unknown. Full JD is required for scores. The host is responsible for truthful
 mapping and full capture; scripts cannot independently certify a webpage.
+
+Assessments bind profile_hash, preferences_hash and role_context_hash. The latter
+includes the role configuration and actual private route bytes; timestamps and
+installation progress are excluded. Legacy assessments without it require refresh.
+Changed context blocks rendering, visual review, application-add, prepare, final
+click preparation and trial completion. Reassess, regenerate and actually review
+the PDF; reassessment alone cannot validate an old package. Changes to another
+role do not invalidate this role's assessment. After a final click, reconciliation
+of that original attempt remains available even if the role has since changed.
 
 ## Draft and PDF review
 

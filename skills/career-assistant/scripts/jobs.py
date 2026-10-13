@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from storage import SCHEMA, digest, now, slug, inside
+from roles import context_hash
 
 RUBRIC = '1.0'
 STATUSES = {'Pending', 'Needs user', 'Blocked', 'Submitted'}
@@ -24,7 +25,7 @@ def assess(store, payload):
     for key in ['company', 'title', 'role_id', 'captured_at']:
         if not job.get(key):
             raise ValueError(f'Missing job field: {key}')
-    store.read(f"roles/{slug(job['role_id'])}.json")
+    role_hash = context_hash(store, job['role_id'])
     job['url'] = canonical_url(job['url'])
     profile = store.read('profile.json')
     prefs = store.read('preferences.json')
@@ -57,7 +58,7 @@ def assess(store, payload):
     # Absence of assessed eligibility is unknown, never an implicit pass.
     gate = 'ineligible' if any(x['result'] == 'no' for x in eligibility) else 'unknown' if not eligibility or any(x['result'] == 'unknown' for x in eligibility) else 'eligible'
     known = [x for x in preferences if x['result'] != 'unknown']
-    result = {'schema_version': SCHEMA, 'rubric_version': RUBRIC, 'job': job, 'requirements': requirements, 'eligibility': eligibility, 'eligibility_result': gate, 'preference_matches': preferences, 'fit_score': round(100 * earned / total), 'unknown_requirement_weight': unknown_weight, 'preference_score': round(100 * sum(x['result'] == 'yes' for x in known) / len(known)) if known else None, 'unknown_preferences': sum(x['result'] == 'unknown' for x in preferences), 'gaps': gaps, 'profile_hash': digest(profile), 'preferences_hash': digest(prefs), 'assessed_at': now()}
+    result = {'schema_version': SCHEMA, 'rubric_version': RUBRIC, 'job': job, 'requirements': requirements, 'eligibility': eligibility, 'eligibility_result': gate, 'preference_matches': preferences, 'fit_score': round(100 * earned / total), 'unknown_requirement_weight': unknown_weight, 'preference_score': round(100 * sum(x['result'] == 'yes' for x in known) / len(known)) if known else None, 'unknown_preferences': sum(x['result'] == 'unknown' for x in preferences), 'gaps': gaps, 'profile_hash': digest(profile), 'preferences_hash': digest(prefs), 'role_context_hash': role_hash, 'assessed_at': now()}
     with store.lock():
         store.write(f"jobs/{job['id']}.json", result)
     return result
@@ -65,6 +66,21 @@ def assess(store, payload):
 def fresh(store, assessment):
     if assessment['profile_hash'] != digest(store.read('profile.json')) or assessment['preferences_hash'] != digest(store.read('preferences.json')):
         raise ValueError('Profile/preferences changed; refresh assessment and resume before continuing')
+    if assessment.get('role_context_hash') != context_hash(store, assessment['job']['role_id']):
+        raise ValueError('Role configuration/personal route changed or assessment predates context tracking; refresh assessment and resume before continuing')
+
+def trial_ready(store):
+    for path in (store.root / 'packages').glob('*/validation.json'):
+        try:
+            review = store.read(f'packages/{path.parent.name}/validation.json')
+            assessment = store.read(f'jobs/{path.parent.name}.json')
+            fresh(store, assessment)
+            pdf = path.parent / 'resume.pdf'
+            if review.get('status') == 'ready' and review.get('profile_hash') == assessment['profile_hash'] and review.get('assessment_hash') == digest(assessment) and review.get('pdf_sha256') == digest(pdf.read_bytes()):
+                return True
+        except (ValueError, KeyError, OSError):
+            continue
+    return False
 
 def add_application(store, job_id):
     assessment = store.read(f'jobs/{slug(job_id)}.json')

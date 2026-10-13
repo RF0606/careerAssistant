@@ -39,7 +39,9 @@ Suggested prompt after extracting this ZIP into a new career-assistant directory
 7. Fix demonstrated failures, update tests and docs/VALIDATION.md with the actual
    result. Keep real-user state, credentials, logs and generated personal skills out
    of tracked files. Regenerate the release manifest after changes.
-8. Run `python release.py pack --output outputs/career-assistant-v0.1.5.zip`.
+   Include interrupted role generation/retry, verification of every requested
+   host's skill, and stale role/route context across resume and submission steps.
+8. Run `python release.py pack --output outputs/career-assistant-v0.1.6.zip`.
    The pack command also writes startup instructions and SHA256SUMS.txt. Extract
    the final ZIP, verify its manifest, install both host copies and rerun tests there.
 
@@ -56,7 +58,7 @@ repository and push the clean source. Typical commands, issued separately:
 ```text
 git init -b master
 git add README.md LICENSE VERSION AGENTS.md CLAUDE.md START_HERE_CODEX.md .gitignore .gitattributes install.py release.py requirements.txt package.json package-lock.json skills tests examples docs release_manifest.json
-git commit -m "feat: release Career Assistant v0.1.5"
+git commit -m "feat: release Career Assistant v0.1.6"
 gh repo create careerAssistant --public --source . --remote origin --push
 ```
 
@@ -75,6 +77,6 @@ Preserve Projects OFF by default, with an optional separate block after Work Exp
 Preserve locally stored Workday username/password pairs and sanitized in-memory filling.
 Do not inherit any other user's standing registration or submission permission.
 Actual platform support is host-driven; prioritize verified form changes and concise
-blocked explanations. v0.1.5 has no hosted model backend or background scheduler.
+blocked explanations. v0.1.6 has no hosted model backend or background scheduler.
 Current acceptance is development-preview only until both real-host conversation
 gates pass. See docs/VALIDATION.md; a safe ZIP alone is not full product acceptance.
