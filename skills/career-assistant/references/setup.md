@@ -1,50 +1,141 @@
-# Setup and capability detection
+# Automatic dependency setup
 
-Core helpers require Python 3.10+. Select an existing supported python, python3,
-py -3 or host-provided local runtime first; use its absolute path if PATH selects
-an older version. If none exists, explain installation from python.org and do not
-claim saved initialization. Helpers use the standard library for storage,
-DOCX/text import and scoring. PDF import needs pypdf; PDF verification/rendering
-needs PyMuPDF; generation needs the Tectonic executable on PATH. In the project
-create a project .venv with `python -m venv .venv` or reuse a compatible existing
-one. Invoke its Python directly: `.venv/Scripts/python.exe` on Windows,
-`.venv/bin/python` on macOS/Linux. Use it with `-m pip install -r requirements.txt`;
-for a standalone skill use `-m pip install "pypdf>=5,<7" "PyMuPDF>=1.25,<2"`.
-Activation/administrator access is unnecessary. Preserve global configuration.
-Find Tectonic setup at https://tectonic-typesetting.github.io/en-US/install.html.
-Tectonic may download its TeX bundle on first compilation. Do not silently claim
-offline PDF generation before that cache exists. Missing tools leave sources as drafts.
+On initialization/resume, inspect dependencies and the active host's browser/search
+APIs. Reuse working installations. Install missing software automatically when
+the current workspace/command/network permissions allow it. Do not make users
+know commands or edit JSON. Briefly explain the environment preparation, then act.
 
-doctor reports per-feature availability and next_actions. --probe-writes tests
-private data and selected --host skill paths without creating facts or routes;
-host command policy is separate. --pdf-smoke uses --only-cached for a small
-non-personal probe, with no downloads. Failure leaves cache unverified, not ready.
-Missing browser/PDF tools do not block text/DOCX onboarding, roles or scoring.
-For a PDF without import capability, offer local dependencies or real text input.
+## Python before Python helpers
 
-`python install.py --host codex|claude|both --workspace <root>` installs the project
-skill copies. `--scope user` uses the user's skill folders. No system/global config
-is changed. It preflights both targets, detects differing versions and backs up
-explicit replacements outside discovery directories. Use one canonical source
-folder for development, then refresh installed copies. Do not edit copies independently.
+1. Prefer an existing Python 3.10+ from a host-provided runtime discovery tool,
+   the selected workspace .venv, python/python3, or Windows py -3. Probe the actual
+   version. If a host exposes bundled runtime paths, discover them rather than
+   assuming a machine-specific location.
+2. If none works, run scripts/bootstrap-python.ps1 on Windows or
+   scripts/bootstrap-python.sh on macOS/Linux. Pass the selected workspace and,
+   when available, an explicit host Python. They reuse working Python first.
+   Windows supports -CheckOnly; POSIX accepts --check-only as its second argument.
+3. With no Python, the native bootstrap installs a private uv runtime manager from
+   the official Astral distribution, then managed CPython 3.13 under
+   .career-assistant/tools/python. Windows verifies the official uv asset SHA-256;
+   POSIX uses Astral's HTTPS installer in unmanaged mode. No sudo, system Python
+   replacement, Windows registry registration, PATH/profile edits or execution
+   policy bypass is used. The returned Python is verified before use.
+4. A denied bootstrap/command requires user permission; do not work around a host
+   denial with another executable, shell or write tool. If no runtime can run,
+   discuss materials but do not claim saved career initialization.
+   The bootstrap also respects a saved installation deferral. Use its explicit
+   -ResumeInstallation (Windows) or --resume-installation third argument (POSIX)
+   only after the user authorizes the previously deferred environment installation.
 
-The host must inspect its available search/browser tools. A doctor report listing
-node or a CLI does not prove browser access. Use the native supported browser tool
-first and its documented APIs. If absent, explain Playwright MCP as an optional
-dependency: https://github.com/microsoft/playwright-mcp. Its standard setup is
-`npx @playwright/mcp@latest`; follow that project's current host-specific configuration
-instructions and choose a dedicated local user-data directory under
-`.career-assistant/browser`. Configure only with the user's requested environment
-scope. Do not silently change all projects' browser settings.
+Native command shapes (the assistant supplies real paths and executes them):
 
-For project browser tests or a trusted Node runtime using the Workday helper:
-`npm ci` and `npx playwright install chromium`. These are optional and not required
-for profile setup. The browser helper accepts the host's live approved Playwright
-page; it does not launch/connect to arbitrary debug ports. If the host runtime
-cannot use local module imports safely, ask the user to handle login visibly.
+```text
+& <skill>/scripts/bootstrap-python.ps1 -Workspace <workspace> -Python <optional-host-python>
+sh <skill>/scripts/bootstrap-python.sh <workspace> <optional-host-python>
+```
 
-Persist no browser profile outside the ignored private data directory for this
-workflow. No CAPTCHA bypass, account-recovery automation or harvested site cookies.
-Missing authentication, tools or permissions are specific blockers, not evidence
-that an application was submitted. Do not promise a site's continued automation
-compatibility from its generic guide.
+## Inspect, install and verify
+
+Use the supported Python with the self-contained helper:
+
+```text
+python <skill>/scripts/career.py --workspace <root> setup --host codex --browser existing --search existing
+```
+
+Set --host claude/both only for the selected hosts. The browser/search values come
+from actual host tool inspection: existing, missing, defer (user requested), or
+inspect (not established). CLI presence alone is not a browser/session check.
+Normally omit --no-downloads; that flag is for explicit offline/deferred acceptance.
+
+The helper runs a resumable installation flow:
+- PDF Python packages: reuse a working environment or create/reuse a workspace
+  .venv, then install official PyPI binary wheels for pypdf and PyMuPDF. It never
+  runs global pip or activates a shell environment. Returned python_executable is
+  used for later helpers; render/PDF import can delegate to that selected local
+  runtime, so restarting through a different PATH Python does not lose packages.
+  A partial venv with missing pip is repaired through local ensurepip first. If a
+  minimal OS Python lacks venv/ensurepip, follow the prepared native managed-runtime
+  bootstrap automatically when permitted, then resume setup with the new runtime.
+  This is a missing runtime component, not permission to replace system Python.
+- Tectonic: reuse a working binary or download the matching official GitHub release
+  into .career-assistant/tools/tectonic, verify its vendor SHA-256 and test execution.
+  Windows x64, macOS x64/arm64 and Linux x64/arm64 have mapped official assets.
+- TeX resources: first compile an anonymous canonical-template probe offline.
+  If resources are missing and downloads are allowed, warm them with a real
+  compilation in a workspace cache, then verify a PDF exists. A successful
+  environment probe does not mark any personal resume ready.
+- Browser fallback, only when the host browser is missing: reuse Node/npm or install
+  a checksum-verified official Node LTS archive locally; install Microsoft's
+  @playwright/mcp from the official npm registry, download Chromium and test a
+  headless launch. Add only a project career_browser server, preserving existing
+  settings. It uses a separate private browser profile and no debugging port.
+  No global model, approval, trust or browser configuration is overwritten.
+  Conflicting project configuration is preserved for review. Server detection uses
+  a TOML parser rather than a text marker: quoted, dotted and inline definitions
+  are recognized, and equivalent entries remain byte-unchanged. Candidate TOML
+  and every requested host are checked before any write. Python 3.10 uses the
+  conditional local tomli dependency; Python 3.11+ uses its standard parser.
+  Existing configuration content is never logged.
+- Search and site authentication are host/account capabilities. Search can use
+  existing search tools or the connected browser. No account, paid service, API
+  credentials, CAPTCHA/2FA exception or submission permission is installed.
+
+Installed files and operational state stay private under .career-assistant and
+the ignored .venv/project host config. Setup writes no career facts, preferences,
+routes or application grants. Its state persists at setup/environment.json.
+Completed steps are rechecked and reused; installation is not repeated merely
+because the user says initialize again.
+If the user declines or postpones installation, run setup --defer-installation
+to persist that choice. Ordinary later setup calls honor it without downloads.
+Use --resume-installation only after the user's later installation authorization;
+this flag does not grant OS/host permission or bypass any denial.
+
+An existing state file that is damaged, unreadable, structurally invalid or has an
+unknown version never becomes a first run and never authorizes downloads. Doctor
+reports the review/permission requirement while text/profile/source-only work can
+continue. Preserve the file and ask which installation choice the user wants.
+After that explicit choice, run recover-setup --choice defer|resume --confirmation
+<actual-user-request>. It backs up and hashes the original bytes before writing
+fresh operational metadata; it installs nothing and resets no career facts/tools.
+Then resume normal setup. A generic --resume-installation cannot silently repair
+a broken state. If no Python can run, a separately authorized native bootstrap
+may install only that runtime, leaving the old state untouched for this recovery.
+
+## Actual permission and connection requests
+
+approval_required means explain the named component, installation destination and
+specific denied permission, then ask whether the user allows that installation.
+For example: “生成 PDF 还缺 Tectonic。当前宿主拒绝了工作区下载/执行；是否允许我在
+这个工作区安装它？” Use the host's normal approval mechanism where available.
+Once approved, resume the same command. If the user declines, record the deferral
+and continue independent profile work. Never change security policy to make it pass.
+
+A network outage, checksum mismatch, unsupported platform, stale installer lock or
+configuration conflict is a different result. Follow its exact recovery action;
+permission alone does not repair all failures. Preserve active locks until no
+installer is running. A denied state write is reported as unsaved, never ready.
+If Chromium reports missing OS libraries, inspect the current system-package
+permission. Run its prepared system_dependency_command automatically when that
+scope is already permitted; otherwise ask the user for the concrete OS-library
+installation permission. Never use sudo or weaken policy to gain access.
+
+host_reload_required means binaries/config are prepared, but the host must reload
+and expose the server. Codex project config loads only in trusted projects; Claude
+may require a project server approval. Ask for that actual trust/tool action when
+needed; do not grant it programmatically or assume connection. Check the live API
+after reload. Login remains a separate, site-specific user action.
+
+After setup, run init idempotently, doctor --host <active-host> --probe-writes,
+inspect actual results, and save the environment checkpoint. Missing optional
+tools can leave PDF/browser work pending while facts and preferences continue.
+A real resume still requires full compilation, text and actual visual review.
+
+Official references:
+- https://docs.astral.sh/uv/reference/installer/
+- https://docs.astral.sh/uv/reference/cli/
+- https://tectonic-typesetting.github.io/en-US/install.html
+- https://tectonic-typesetting.github.io/book/latest/getting-started/first-document.html
+- https://github.com/microsoft/playwright-mcp
+- https://learn.chatgpt.com/docs/extend/mcp
+- https://code.claude.com/docs/en/mcp

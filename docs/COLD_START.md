@@ -6,21 +6,37 @@ No personal knowledge or role directions come with the download.
 
 Select an existing Python 3.10+ from python, python3, py -3 or the host's local
 runtime discovery. Use its absolute path if PATH selects an older interpreter.
-If none exists, install a user-accessible Python from
-[python.org](https://www.python.org/downloads/), then reopen the host. Helpers now
+If none exists, the assistant runs the native bootstrap to install managed CPython
+privately in the selected workspace, using the official Astral distribution. If
+runtime download/execution is denied, it explains the exact permission and asks
+the user before resuming. No system Python, registry or PATH changes are made. Helpers
 reject Python 3.8/3.9 specifically before writing career data or installing skills.
 Do not claim saved progress until a helper actually succeeds.
 
 | Missing capability | Available now | Next action |
 | --- | --- | --- |
-| pypdf | Text/Markdown/DOCX, conversational facts, scoring | Use text or add PDF packages locally |
-| PyMuPDF | Profile, role skills, scoring, resume.tex | Add QA packages before compilation/network downloads |
-| Tectonic | Profile, scoring, source-only resume | Install its official local binary for the OS |
-| TeX cache | Profile and source-only resume | Allow first compilation's bundle downloads, then inspect the PDF |
-| Browser or Node CLI | Profile, scoring, available PDF tools | Inspect the supported host browser; CLI presence proves no session |
-| Writes denied | Discuss materials | Enable this workspace's writes/commands in the host; do not bypass denial |
+| pypdf | Text/Markdown/DOCX, conversational facts, scoring | Setup installs the local official wheel when permitted |
+| PyMuPDF | Profile, role skills, scoring, resume.tex | Setup installs and imports the QA package before compilation |
+| Tectonic | Profile, scoring, source-only resume | Setup downloads and verifies the official local binary |
+| TeX cache | Profile and source-only resume | Setup warms an anonymous canonical-template compile |
+| Browser or Node CLI | Profile, scoring, available PDF tools | Inspect host APIs; install the private fallback only when missing |
+| Writes denied | Discuss materials | Explain the denied step and ask permission; do not bypass denial |
 
-The assistant can run:
+The assistant first inspects the host's actual browser/search APIs, then normally
+runs the installer automatically with the appropriate existing/missing/defer flags:
+
+```text
+python skills/career-assistant/scripts/career.py setup --host codex --browser existing --search existing
+```
+
+It installs missing PDF wheels/Tectonic, verifies a canonical template compilation,
+and prepares a local Node/Playwright browser fallback only when required. State
+is saved privately at setup/environment.json. After a denied operation, ask for
+that specific permission; do not change host policy or use a different tool to
+bypass rejection. Installation and project config do not establish host trust,
+browser connection, site login or a verified personal resume. Recheck after reload.
+
+The assistant can also run:
 
 ```text
 python skills/career-assistant/scripts/career.py doctor --host codex --probe-writes

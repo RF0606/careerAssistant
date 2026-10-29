@@ -9,9 +9,9 @@ import unittest
 import warnings
 from unittest.mock import patch
 from zipfile import ZipFile, ZIP_DEFLATED
-from fixtures import make_workspace, assessment, stub_ready_package, authorized_preparation
+from fixtures import make_workspace, assessment, draft, stub_ready_package, authorized_preparation
 from storage import Store, SCHEMA, atomic, digest, json_bytes
-import profiles, jobs, maintenance
+import profiles, jobs, maintenance, resume
 
 
 class MaintenanceTests(unittest.TestCase):
@@ -128,6 +128,51 @@ class MaintenanceTests(unittest.TestCase):
         self.assertEqual('Needs user', target.read('tracker.json')['records'][0]['status'])
         with self.assertRaises(ValueError): jobs.begin_submit(target, app['id'])
         with self.assertRaises(ValueError): jobs.prepare(target, app['id'], review)
+
+    def test_restoring_older_knowledge_preserves_attempt_snapshots_after_rerender(self):
+        saved = maintenance.backup(self.store)
+        app, intent = self.begin(); self.confirm(app, intent)
+        attempt = self.store.read('tracker.json')['records'][0]['attempts'][0]
+        snapshot = self.store.root / attempt['snapshot_path']
+        original = {p.name: p.read_bytes() for p in snapshot.iterdir()}
+        resume.render(self.store, 'demo-job', draft(self.store), False)
+        proposal = maintenance.plan(self.store, saved['path'])
+        maintenance.apply(self.store, proposal['id'], 'Fictional owner restores old knowledge')
+        self.assertEqual(original, {p.name: p.read_bytes() for p in snapshot.iterdir()})
+        self.assertEqual('Submitted', self.store.read('tracker.json')['records'][0]['status'])
+        self.assertTrue(maintenance.verify_backup(maintenance.backup(self.store)['path'])['valid'])
+
+    def test_schema_migration_preserves_historical_snapshot_bytes(self):
+        self.begin()
+        attempt = self.store.read('tracker.json')['records'][0]['attempts'][0]
+        directory = self.store.root / attempt['snapshot_path']
+        before = {p.name: p.read_bytes() for p in directory.iterdir()}
+        self.legacy()
+        proposal = maintenance.plan(self.store, operation='migrate')
+        maintenance.apply(self.store, proposal['id'], 'Fictional owner approves migration')
+        self.assertEqual(before, {p.name: p.read_bytes() for p in directory.iterdir()})
+        self.assertTrue(maintenance.verify_backup(maintenance.backup(self.store)['path'])['valid'])
+
+    def test_restore_merges_distinct_requisitions_with_same_employer_and_title(self):
+        jobs.add_application(self.store, 'demo-job')
+        saved = maintenance.backup(self.store)
+        jobs.assess(self.store, assessment(self.store, 'another-requisition'))
+        jobs.add_application(self.store, 'another-requisition')
+        proposal = maintenance.plan(self.store, saved['path'])
+        maintenance.apply(self.store, proposal['id'], 'Fictional owner restores older knowledge')
+        self.assertEqual(2, self.store.read('tracker.json')['record_count'])
+
+    def test_restore_retains_user_review_of_distinct_title_only_positions(self):
+        first = jobs.add_application(self.store, 'demo-job')
+        saved = maintenance.backup(self.store)
+        other = assessment(self.store, 'reviewed-role'); other['job'].pop('requisition_id')
+        jobs.assess(self.store, other)
+        review = {'job_id': 'reviewed-role', 'application_ids': [first['id']],
+                  'user_confirmation': 'Fictional user confirms distinct positions', 'evidence': 'Fictional official postings show separate teams'}
+        jobs.add_application(self.store, 'reviewed-role', review)
+        proposal = maintenance.plan(self.store, saved['path'])
+        maintenance.apply(self.store, proposal['id'], 'Fictional owner restores older knowledge')
+        self.assertEqual(2, self.store.read('tracker.json')['record_count'])
 
     def test_current_credentials_and_browser_files_are_untouched(self):
         saved = maintenance.backup(self.store); self.change_name()

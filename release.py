@@ -12,7 +12,7 @@ from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 ROOT = Path(__file__).resolve().parent
 ROOT_FILES = {'README.md','LICENSE','VERSION','AGENTS.md','CLAUDE.md','START_HERE_CODEX.md','.gitignore','.gitattributes','install.py','release.py','requirements.txt','package.json','package-lock.json'}
 TREES = {'skills','tests','examples','docs','.github'}
-SUFFIXES = {'.md','.py','.mjs','.json','.tex','.yaml','.yml','.txt','.html'}
+SUFFIXES = {'.md','.py','.mjs','.ps1','.sh','.json','.tex','.yaml','.yml','.txt','.html'}
 MANIFEST = 'release_manifest.json'
 
 def sha(data): return hashlib.sha256(data).hexdigest()
@@ -94,7 +94,9 @@ def pack(output,denied=()):
         'The assistant collects and saves your profile step by step. No manual JSON is needed.\n'
         'Standard tools/templates only; enrich your personal knowledge and routes locally after download.\n'
         'Optional install: python install.py --host codex (or claude/both when selected)\n'
-        'Core requires Python 3.10+. PDF: local Tectonic and project .venv packages; see docs/COLD_START.md.\n'
+        'Initialization detects/reuses dependencies and installs missing local Python/PDF/browser tools when allowed.\n'
+        'Actual denied permissions require your approval; host trust/reload and site login remain separate.\n'
+        'No global PATH, registry or security-policy changes. See docs/COLD_START.md for recovery.\n'
         'Existing schema-1 data requires the assistant to plan and perform migration; no facts are reset.\n'
         'Local backups/restores/history: ask the assistant; never attach private backups to a public release.\n'
         'See README.md for normal use; docs/VALIDATION.md for acceptance limits.\n'

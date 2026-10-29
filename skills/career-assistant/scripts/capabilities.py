@@ -1,5 +1,7 @@
 """Local, optional capability checks; no installs or global configuration changes."""
 import importlib
+import contextlib
+import io
 import os
 import platform
 import shutil
@@ -8,6 +10,7 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
+from environment import tool_path, tool_env, configured_python, probe_python, settings, SetupError
 
 
 def write_probe(directory):
@@ -31,7 +34,7 @@ def pdf_smoke(workspace, compiler):
         source = directory / 'probe.tex'
         source.write_text('\\documentclass{article}\n\\begin{document}Career Assistant cache probe.\\end{document}\n', encoding='utf-8')
         result = subprocess.run([compiler, '--only-cached', '--outdir', str(directory), str(source)],
-                                capture_output=True, timeout=60)
+                                capture_output=True, timeout=60, env=tool_env(workspace))
         if result.returncode or not (directory / 'probe.pdf').is_file():
             return {'status': 'cache-unverified', 'offline_only': True,
                     'next_action': 'The offline probe failed. First compilation may need network access to download the TeX bundle. Keep resumes as drafts until a real build and PDF review pass.'}
@@ -43,15 +46,35 @@ def pdf_smoke(workspace, compiler):
 
 def report(workspace, host='codex', probe_writes=False, check_pdf=False):
     workspace = Path(workspace).resolve()
+    setup_problem = None
+    try:
+        saved = settings(workspace)
+    except SetupError as exc:
+        saved = {}
+        setup_problem = exc.result
     tools = {name: shutil.which(name) for name in ['tectonic', 'node', 'npm', 'codex', 'claude']}
+    tools['tectonic'] = tool_path(workspace, 'tectonic')
     packages, package_errors = {}, {}
     for name in ['pypdf', 'fitz']:
         try:
-            importlib.import_module(name)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                importlib.import_module('pymupdf' if name == 'fitz' else name)
             packages[name] = True
         except (ImportError, OSError) as exc:
             packages[name] = False
             package_errors[name] = type(exc).__name__
+    selected = configured_python(workspace) if setup_problem is None else None
+    if selected and Path(sys.prefix).absolute() != selected.parent.parent.absolute():
+        try:
+            verified = probe_python(selected)
+        except SetupError as exc:
+            verified = None
+            setup_problem = exc.result
+            packages = {'pypdf': False, 'fitz': False}
+            package_errors = {'runtime': 'PermissionDenied; allow this selected workspace runtime before continuing'}
+        if verified:
+            packages = verified['packages']
+            package_errors = {name: 'ImportError' for name, present in packages.items() if not present}
     local_python = workspace / '.venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
     actions = []
     if not all(packages.values()):
@@ -76,5 +99,12 @@ def report(workspace, host='codex', probe_writes=False, check_pdf=False):
                                  'probes': [write_probe(workspace / '.career-assistant'),
                                             *(write_probe(workspace / folder / 'skills') for folder in folders)]}
     if check_pdf:
-        result['pdf_cache_probe'] = pdf_smoke(workspace, tools['tectonic'])
+        result['pdf_cache_probe'] = ({'status': 'blocked', **setup_problem} if setup_problem else pdf_smoke(workspace, tools['tectonic']))
+    if setup_problem:
+        result['setup'] = {**setup_problem, 'state_saved': False}
+        result['features']['pdf_generation_and_qa'] = False
+        result['next_actions'].insert(0, {'feature': 'setup', **setup_problem})
+    elif saved:
+        result['setup'] = {'status': saved.get('status'), 'python_executable': saved.get('python_executable'),
+                           'steps': saved.get('steps', {}), 'next_action': 'Resume setup for missing steps; ask only for actual denied permissions. Tool installation does not imply host connection or site login.'}
     return result

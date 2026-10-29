@@ -4,11 +4,111 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
-from storage import SCHEMA, digest, now, slug, inside
+from storage import SCHEMA, digest, now, slug, inside, atomic_bytes, json_bytes
 from roles import context_hash
 
 RUBRIC = '1.0'
 STATUSES = {'Pending', 'Needs user', 'Blocked', 'Submitted'}
+
+
+def duplicate_kind(left, right):
+    """Separate verified requisitions from title-only matches and exact duplicates."""
+    if left['url'] == right['url']:
+        return 'exact'
+    if left['company'].strip().casefold() != right['company'].strip().casefold():
+        return None
+    first = str(left.get('requisition_id') or '').strip().casefold()
+    second = str(right.get('requisition_id') or '').strip().casefold()
+    if first and second:
+        return 'exact' if first == second else None
+    return 'ambiguous' if left['title'].strip().casefold() == right['title'].strip().casefold() else None
+
+
+def reviewed_separate(row, other):
+    review = row.get('duplicate_review', {})
+    return (isinstance(review, dict) and review.get('job_id') == row['job_id']
+            and isinstance(review.get('application_ids'), list)
+            and other['id'] in review.get('application_ids', [])
+            and isinstance(review.get('user_confirmation'), str) and bool(review['user_confirmation'].strip())
+            and isinstance(review.get('evidence'), str) and bool(review['evidence'].strip()))
+
+
+def _artifact_bytes(store, name):
+    path = store.root / name
+    if not name.startswith('packages/') or path.is_symlink() or inside(store.root, path) != path.absolute():
+        raise ValueError('Resume artifacts must be regular files in this workspace packages directory')
+    if not path.is_file():
+        raise ValueError('Referenced resume artifact is missing; recover the original from a verified backup before continuing')
+    return path.read_bytes()
+
+
+def _snapshot_package(store, job_id, attempt, assessment):
+    directory = f"packages/{slug(job_id)}/attempts/{slug(attempt['id'])}"
+    destination = inside(store.root, store.root / directory)
+    if destination.exists():
+        raise ValueError('Attempt snapshot already exists; never replace historical materials')
+    content = {}
+    for name in ['resume.pdf', 'resume.tex', 'resume.txt', 'draft.json', 'validation.json', 'JD_snapshot.md', 'match-report.json', 'ATS_Match_Report.md']:
+        path = f'packages/{job_id}/{name}'
+        if (store.root / path).exists():
+            content[name] = _artifact_bytes(store, path)
+    if digest(content.get('resume.pdf', b'')) != attempt['pdf_sha256']:
+        raise ValueError('Reviewed PDF changed before the attempt snapshot was saved')
+    content.update({'assessment.json': json_bytes(assessment), 'profile.json': json_bytes(store.read('profile.json')),
+                    'preferences.json': json_bytes(store.read('preferences.json'))})
+    manifest = {'schema_version': SCHEMA, 'attempt_id': attempt['id'], 'job_id': job_id,
+                'files': {name: digest(data) for name, data in content.items()}}
+    for name, data in content.items():
+        atomic_bytes(destination / name, data)
+    encoded = json_bytes(manifest)
+    atomic_bytes(destination / 'snapshot.json', encoded)
+    attempt.update(resume_path=directory + '/resume.pdf', draft_resume_path=f'packages/{job_id}/resume.pdf',
+                   snapshot_path=directory, snapshot_sha256=digest(encoded))
+
+
+def _verify_snapshot(store, attempt):
+    if digest(_artifact_bytes(store, attempt['resume_path'])) != attempt['pdf_sha256']:
+        raise ValueError('Historical PDF changed; recover its verified original before continuing')
+    if attempt.get('snapshot_path'):
+        name = attempt['snapshot_path'] + '/snapshot.json'
+        encoded = _artifact_bytes(store, name)
+        if digest(encoded) != attempt.get('snapshot_sha256'):
+            raise ValueError('Historical snapshot manifest changed; preserve it and recover the verified original')
+        import json
+        manifest = json.loads(encoded)
+        for name, expected in manifest['files'].items():
+            if '/' in name or '\\' in name or name in {'.', '..'}:
+                raise ValueError('Invalid historical snapshot file path')
+            if digest(_artifact_bytes(store, attempt['snapshot_path'] + '/' + name)) != expected:
+                raise ValueError('Historical snapshot changed; preserve it and recover the verified original')
+
+
+def preserve_legacy_resumes(store, job_id):
+    """Called under the workspace lock before render mutates a live package."""
+    tracker = store.read('tracker.json')
+    live = f'packages/{job_id}/resume.pdf'
+    changed = False
+    for row in tracker['records']:
+        if row['job_id'] != job_id:
+            continue
+        for attempt in row['attempts']:
+            if not (attempt.get('started_at') or attempt.get('outcome') in {'confirmed', 'unknown'}):
+                continue
+            if attempt.get('resume_path', '').replace('\\', '/') != live:
+                _verify_snapshot(store, attempt)
+                continue
+            frozen = f"packages/{job_id}/attempts/{slug(attempt['id'])}/resume.pdf"
+            # A completed copy can survive an interruption before the tracker write.
+            data = _artifact_bytes(store, frozen) if (store.root / frozen).exists() else _artifact_bytes(store, live)
+            if digest(data) != attempt['pdf_sha256']:
+                raise ValueError('Legacy submitted/uncertain PDF is missing or changed; recover the exact original from backup before regenerating')
+            if not (store.root / frozen).exists():
+                atomic_bytes(inside(store.root, store.root / frozen), data)
+            attempt['resume_path'] = frozen
+            attempt['draft_resume_path'] = live
+            changed = True
+    if changed:
+        store.write('tracker.json', tracker)
 
 def canonical_url(url):
     u = urlsplit(url)
@@ -82,22 +182,36 @@ def trial_ready(store):
             continue
     return False
 
-def add_application(store, job_id):
+def add_application(store, job_id, duplicate_review=None):
     assessment = store.read(f'jobs/{slug(job_id)}.json')
     fresh(store, assessment)
     job = assessment['job']
     with store.lock():
         tracker = store.read('tracker.json')
+        ambiguous = []
         for row in tracker['records']:
-            same_url = row['url'] == job['url']
-            same_employer = row['company'].casefold() == job['company'].casefold()
-            same_req = bool(job.get('requisition_id')) and row.get('requisition_id') == job.get('requisition_id')
-            same_title = row['title'].casefold() == job['title'].casefold()
-            if same_url or (same_employer and (same_req or same_title)):
+            kind = duplicate_kind(row, job)
+            if kind == 'exact':
                 raise ValueError(f'Possible duplicate: {row["id"]}; review the existing record, including reposts')
+            if kind == 'ambiguous':
+                ambiguous.append(row)
+        if ambiguous:
+            if any(any(a.get('outcome') == 'unknown' for a in row['attempts']) for row in ambiguous):
+                raise ValueError('Possible duplicate has an uncertain submission; reconcile the original attempt before reviewing another title-only match')
+            required = {row['id'] for row in ambiguous}
+            probe = {'job_id': job_id, 'duplicate_review': duplicate_review}
+            if (not isinstance(duplicate_review, dict) or not isinstance(duplicate_review.get('application_ids'), list)
+                    or any(not isinstance(x, str) for x in duplicate_review['application_ids'])
+                    or set(duplicate_review['application_ids']) != required
+                    or not all(reviewed_separate(probe, row) for row in ambiguous)):
+                raise ValueError('Possible duplicate: ' + ', '.join(sorted(required)) + '. Confirm distinct positions with the user and provide a job-scoped --review-input, or record their distinct verified requisition IDs.')
+        elif duplicate_review is not None:
+            raise ValueError('Duplicate review does not match any current title-only candidates; inspect current records first')
         if assessment['eligibility_result'] == 'ineligible':
             raise ValueError('Confirmed eligibility failure: do not create an application')
         row = {'id': 'app-' + uuid.uuid4().hex[:12], 'job_id': job_id, 'company': job['company'], 'title': job['title'], 'url': job['url'], 'requisition_id': job.get('requisition_id'), 'status': 'Pending' if assessment['eligibility_result'] == 'eligible' else 'Needs user', 'attempts': [], 'created_at': now(), 'next_action': 'Review application materials and required answers'}
+        if ambiguous:
+            row['duplicate_review'] = {**duplicate_review, 'reviewed_at': now()}
         tracker['records'].append(row)
         tracker['record_count'] = len(tracker['records'])
         store.write('tracker.json', tracker)
@@ -165,6 +279,7 @@ def prepare(store, app_id, payload):
             if answer.get('high_impact') and any(profile['facts'][f]['status'] != 'user_confirmed' for f in refs):
                 raise ValueError('High-impact answers require explicit user-confirmed facts')
         attempt = {'id': uuid.uuid4().hex, 'grant_id': g['id'], 'prepared_at': now(), 'profile_hash': assessment['profile_hash'], 'assessment_hash': digest(assessment), 'pdf_sha256': review['pdf_sha256'], 'resume_path': f"packages/{row['job_id']}/resume.pdf", 'answers': payload.get('answers', []), 'review_evidence': payload['review_evidence'], 'outcome': 'prepared'}
+        _snapshot_package(store, row['job_id'], attempt, assessment)
         row['attempts'].append(attempt)
         row['status'] = 'Pending'
         store.write('tracker.json', tracker)
@@ -180,14 +295,15 @@ def begin_submit(store, app_id):
         assessment = store.read(f"jobs/{row['job_id']}.json")
         fresh(store, assessment)
         verify_grant(store, attempt['grant_id'], row)
-        if attempt['assessment_hash'] != digest(assessment) or attempt['pdf_sha256'] != digest((store.root / attempt['resume_path']).read_bytes()):
+        if attempt['assessment_hash'] != digest(assessment) or attempt['pdf_sha256'] != digest(_artifact_bytes(store, attempt.get('draft_resume_path', attempt['resume_path']))):
             raise ValueError('Prepared inputs changed')
+        _verify_snapshot(store, attempt)
         attempt['started_at'] = now()
         attempt['outcome'] = 'unknown'
         row['status'] = 'Needs user'
         row['next_action'] = 'Await observed submission confirmation; never retry an uncertain click'
         store.write('tracker.json', tracker)
-    return {'application_id': app_id, 'attempt_id': attempt['id'], 'action': 'User-authorized final submit may now be clicked ONCE. Record observed outcome immediately.'}
+    return {'application_id': app_id, 'attempt_id': attempt['id'], 'resume_path': attempt['resume_path'], 'pdf_sha256': attempt['pdf_sha256'], 'action': 'User-authorized final submit may now be clicked ONCE. Record observed outcome immediately.'}
 
 def outcome(store, app_id, payload):
     result = payload.get('result')

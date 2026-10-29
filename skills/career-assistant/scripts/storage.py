@@ -6,14 +6,68 @@ import json
 import os
 import re
 import tempfile
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = '0.1.8'
+VERSION = '0.1.11'
 SCHEMA = 2
 PRIVATE = '.career-assistant'
 SECRET_KEYS = {'password', 'passwd', 'access_token', 'refresh_token', 'api_key', 'client_secret', 'cookies', 'otp', 'sin', 'ssn', 'passport_number'}
+PREFERENCE_KEYS = {'submission_policy', 'include_projects', 'targets', 'locations', 'work_authorization', 'compensation', 'work_modes', 'commute', 'contracts', 'travel', 'start_date', 'exclusions'}
+
+
+def validate_preferences(value):
+    """Validate storage shapes without supplying a user's goals or unknown answers."""
+    if not isinstance(value, dict) or not PREFERENCE_KEYS <= value.keys():
+        raise ValueError('Preferences need all standard fields; preserve the file and correct missing fields with preferences-update')
+    def invalid(field, shape):
+        raise ValueError(f'preferences.{field} must be {shape}; correct it with preferences-update. Unknown lists use [], objects use {{}} and optional answers use null.')
+    for field in ['targets', 'locations', 'work_authorization', 'work_modes', 'contracts', 'exclusions']:
+        if not isinstance(value[field], list):
+            invalid(field, 'a list')
+    for field in ['locations', 'work_modes', 'contracts', 'exclusions']:
+        if any(not isinstance(item, str) or not item.strip() for item in value[field]):
+            invalid(field, 'a list of nonempty strings')
+    for target in value['targets']:
+        if isinstance(target, str) and target.strip():
+            continue
+        if not isinstance(target, dict) or not any(isinstance(target.get(k), str) and target[k].strip() for k in ['id', 'title']):
+            invalid('targets', 'nonempty strings or objects with an id or title')
+        if 'id' in target:
+            slug(target['id'])
+        if 'title' in target and (not isinstance(target['title'], str) or not target['title'].strip()):
+            invalid('targets', 'objects with a nonempty title when supplied')
+        if 'priority' in target and (type(target['priority']) is not int or target['priority'] < 1):
+            invalid('targets', 'objects with a positive integer priority when supplied')
+    if any(not (isinstance(item, str) and item.strip() or isinstance(item, dict) and item) for item in value['work_authorization']):
+        invalid('work_authorization', 'nonempty strings or structured objects')
+    if not isinstance(value['compensation'], dict):
+        invalid('compensation', 'an object')
+    if value['submission_policy'] is not None and value['submission_policy'] not in ('per-application', 'per-batch'):
+        invalid('submission_policy', 'per-application, per-batch or null')
+    if type(value['include_projects']) is not bool:
+        invalid('include_projects', 'a user-chosen boolean')
+    if value['start_date'] is not None and (not isinstance(value['start_date'], str) or not value['start_date'].strip()):
+        invalid('start_date', 'a nonempty string or null')
+    for field in ['commute', 'travel']:
+        answer = value[field]
+        if answer is not None and not isinstance(answer, (str, dict, int, float)):
+            invalid(field, 'a description, structured object, number or null')
+
+
+def replace_file(source, destination):
+    """Retry only bounded Windows sharing/access conflicts; preserve other denials."""
+    delays = (0.02, 0.05, 0.1, 0.2, 0.4)
+    for attempt in range(len(delays) + 1):
+        try:
+            os.replace(source, destination)
+            return
+        except OSError as exc:
+            if getattr(exc, 'winerror', None) not in {5, 32, 33} or attempt == len(delays):
+                raise
+            time.sleep(delays[attempt])
 
 def now():
     return datetime.now(timezone.utc).isoformat()
@@ -34,7 +88,7 @@ def atomic(path, value):
             stream.write('\n')
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temp, path)
+        replace_file(temp, path)
     finally:
         if os.path.exists(temp):
             os.unlink(temp)
@@ -48,7 +102,7 @@ def atomic_text(path, text):
             stream.write(text)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temp, path)
+        replace_file(temp, path)
     finally:
         if os.path.exists(temp):
             os.unlink(temp)
@@ -62,7 +116,7 @@ def atomic_bytes(path, data):
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temp, path)
+        replace_file(temp, path)
     finally:
         if os.path.exists(temp):
             os.unlink(temp)
@@ -124,17 +178,23 @@ class Store:
         finally:
             lock.unlink(missing_ok=True)
 
-    def read(self, name):
+    def read(self, name, *, allow_invalid_preferences=False):
         self.check_maintenance()
+        if str(name).replace('\\', '/') == 'setup/environment.json':
+            raise ValueError('Dependency setup state is operational metadata. Read it through career.py doctor/setup or environment.settings; it is not an old career-data schema and must not trigger migration.')
         value = load(inside(self.root, self.root / name))
         if value.get('schema_version') != SCHEMA:
             if value.get('schema_version') == 1:
                 raise ValueError('Data schema 1 needs explicit migration to schema 2. Preserve data; use migrate-plan, then migrate after reviewing its plan.')
             raise ValueError('Unsupported schema version; preserve data and migrate explicitly')
+        if name == 'preferences.json' and not allow_invalid_preferences:
+            validate_preferences(value)
         return value
 
     def write(self, name, value, audit=True):
         no_secrets(value)
+        if name == 'preferences.json':
+            validate_preferences(value)
         self.check_maintenance()
         data = json_bytes(value)
         target = inside(self.root, self.root / name)

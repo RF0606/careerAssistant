@@ -73,9 +73,15 @@ one without changing the user's global configuration:
 python tests/host_smoke.py codex --results test-results/hosts --executable $careerCodex
 ```
 
-Test directories inherit the project's Windows permissions. This avoids owner-only
-temporary-directory ACLs that can prevent the external verifier from reading files
-created by the dedicated sandbox account. All fixtures and logs remain ignored.
+The runner now copies the complete public download into a new directory outside
+the source repo and starts with no profile or installed project skills. This covers
+the actual Download ZIP entry and avoids discovering an ancestor repo's skills.
+The default parent is career-assistant-host-tests in the local temp directory;
+--workspace-parent selects another trusted writable parent. Directories inherit
+that parent's Windows permissions, avoiding owner-only mkdtemp ACLs. Logs remain
+under the requested ignored results directory; fictional workspaces stay local.
+Use --preinstall-skill only for a separate installed-skill check. It is not the
+default first-use acceptance. No fixture seeds a real profile.
 Optional MCP warnings do not count as host authentication failure when the model
 and required local commands succeeded. Passing the runner still requires disk
 assertions and transcript review; a successful response alone is insufficient.

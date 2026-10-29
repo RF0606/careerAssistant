@@ -5,16 +5,19 @@ private; no browsers, real accounts or applications. Exit 2 = blocked/unverified
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 import uuid
 
 PROJECT = Path(__file__).resolve().parents[1]
 BOUNDARY = ('这是虚构用户的隔离验收，职业资料只读写当前工作区，不访问工作区外的用户资料、浏览器、账号或网络；可使用本机已有程序、依赖和编译缓存，'
+            '本次宿主对话仅复用现有依赖，不下载或安装；环境步骤运行 setup --no-downloads --browser defer --search defer，实际缺依赖安装由独立冷启动验收覆盖。'
             '不投递、不创建仓库、不提交代码、不修改程序或共享skill源文件。不要委派子代理。使用本项目职业助手及其本地脚本。')
 PROMPTS = [
     ('initialize', '帮我初始化信息。请开始正常的分步建档，保存进度，最多问三个问题，然后等待。'),
@@ -60,7 +63,7 @@ def checks(root, stage, before):
     facts = profile.get('facts', {})
     result = {'profile_exists': bool(profile), 'tracker_empty': read(root, 'tracker.json', {}).get('record_count') == 0}
     if stage == 'initialize':
-        result.update(empty_profile=not facts, environment_saved='environment' in progress.get('completed', []), no_default_routes=not (root/'.career-assistant/routes').exists())
+        result.update(empty_profile=not facts, environment_saved='environment' in progress.get('completed', []), no_default_routes=not (root/'.career-assistant/routes').exists(), dependency_setup_saved=(root/'.career-assistant/setup/environment.json').is_file())
     elif stage == 'facts':
         text = ' '.join(f.get('text', '') for f in facts.values())
         sources = read(root, 'sources.json', {}).get('sources', {})
@@ -110,21 +113,38 @@ def command(host, root, result_dir, stage, executable=None, sandbox=None):
             '--mcp-config', '{"mcpServers":{}}', '--output-format', 'stream-json', '--verbose']
 
 
-def run(host, results, timeout, executable=None, sandbox=None):
-    workspace_parent = results.resolve()/'workspaces'
+def prepare_workspace(root, host, preinstall=False):
+    """Copy only the public download; default first use has no installed skills."""
+    root.mkdir(parents=True, exist_ok=True)
+    if any(root.iterdir()):
+        raise ValueError('Host acceptance requires a new empty workspace')
+    spec = importlib.util.spec_from_file_location('career_host_release', PROJECT/'release.py')
+    release = importlib.util.module_from_spec(spec); spec.loader.exec_module(release)
+    for source in [*release.public_files(), PROJECT/'release_manifest.json']:
+        target = root/source.relative_to(PROJECT)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    if preinstall:
+        subprocess.run([sys.executable, str(root/'install.py'), '--host', host], cwd=root, check=True, capture_output=True)
+    return {'profile_exists': (root/'.career-assistant').exists(),
+            'codex_skills_exist': (root/'.agents/skills').exists(),
+            'claude_skills_exist': (root/'.claude/skills').exists(), 'git_exists': (root/'.git').exists()}
+
+
+def run(host, results, timeout, executable=None, sandbox=None, preinstall=False, workspace_parent=None):
+    # Keep source-only first use outside an ancestor repo's discovered project skills.
+    workspace_parent = Path(workspace_parent or Path(tempfile.gettempdir())/'career-assistant-host-tests').resolve()
     workspace_parent.mkdir(parents=True, exist_ok=True)
     # On Python 3.13/Windows, mkdtemp's owner-only ACL can leave files created
     # by the dedicated sandbox account unreadable to the external verifier.
-    # Inherit the trusted project's ACLs instead; fixtures/logs stay ignored.
+    # Inherit the selected parent's ACLs; fixtures stay local and logs stay ignored.
     root = workspace_parent/('career-host-'+host+'-'+uuid.uuid4().hex[:12])
     root.mkdir()
     result_dir = results.resolve()/root.name
     result_dir.mkdir(parents=True)
-    for f in ['AGENTS.md', 'CLAUDE.md', 'install.py']:
-        shutil.copy2(PROJECT/f, root/f)
-    shutil.copytree(PROJECT/'skills', root/'skills', ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
-    subprocess.run([sys.executable, str(root/'install.py'), '--host', host], cwd=root, check=True, capture_output=True)
+    initial = prepare_workspace(root, host, preinstall)
     result = {'host': host, 'isolated_workspace': str(root), 'results': str(result_dir), 'stages': [],
+              'initial_state': initial, 'preinstalled': preinstall,
               'acceptance': 'unverified', 'permissions': sandbox or 'existing user configuration', 'manual_transcript_review_required': True}
     for stage, prompt in PROMPTS:
         before = snapshot(root)
@@ -169,5 +189,7 @@ if __name__ == '__main__':
     ap.add_argument('--timeout', type=int, default=240, help='Maximum seconds for each host turn')
     ap.add_argument('--executable', type=Path, help='Use a specific installed host CLI when PATH selects an older copy')
     ap.add_argument('--sandbox', choices=['read-only','workspace-write','danger-full-access'], help='Optional Codex sandbox override; default retains the user-selected permissions')
+    ap.add_argument('--preinstall-skill', action='store_true', help='Additionally exercise an installed skill; default tests the uninstalled public download')
+    ap.add_argument('--workspace-parent', type=Path, help='Optional isolated workspace parent; default is outside the source repo in the local temp directory')
     args = ap.parse_args()
-    sys.exit(run(args.host, args.results, args.timeout, args.executable, args.sandbox))
+    sys.exit(run(args.host, args.results, args.timeout, args.executable, args.sandbox, args.preinstall_skill, args.workspace_parent))

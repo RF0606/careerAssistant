@@ -4,7 +4,7 @@ import uuid
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from zipfile import ZipFile
-from storage import SCHEMA, digest, now, slug, atomic_text, inside
+from storage import SCHEMA, PREFERENCE_KEYS, digest, now, slug, atomic_text, inside, validate_preferences
 from roles import HOST_FOLDERS, matches_target, skill_path, context_hash, context_digest, require_selected
 from jobs import trial_ready
 
@@ -72,16 +72,17 @@ def update_profile(store, payload):
     return {'revision': profile['revision'], 'facts_updated': list(facts), 'notice': 'Existing assessments, resume reviews and submission preparations are stale until refreshed.'}
 
 def update_preferences(store, patch):
+    if not isinstance(patch, dict):
+        raise ValueError('Preference changes must be a JSON object with standard preference fields')
     with store.lock():
-        prefs = store.read('preferences.json')
-        if any(k not in prefs or k in {'schema_version', 'revision', 'updated_at'} for k in patch):
+        # A validated partial update can repair a malformed value saved by an older version.
+        prefs = store.read('preferences.json', allow_invalid_preferences=True)
+        if any(k not in PREFERENCE_KEYS for k in patch):
             raise ValueError('Unknown preference field')
-        if 'submission_policy' in patch and patch['submission_policy'] not in {None, 'per-application', 'per-batch'}:
-            raise ValueError('Choose per-application or per-batch based on the user answer')
-        if 'include_projects' in patch and type(patch['include_projects']) is not bool:
-            raise ValueError('include_projects must be a user-chosen boolean')
-        if any(prefs[k] != value for k, value in patch.items()):
-            prefs.update(patch)
+        updated = {**prefs, **patch}
+        validate_preferences(updated)
+        if updated != prefs:
+            prefs = updated
             prefs['revision'] += 1
             prefs['updated_at'] = now()
             store.write('preferences.json', prefs)

@@ -4,7 +4,8 @@ import shutil
 import subprocess
 from pathlib import Path
 from storage import SCHEMA, atomic, digest, now, slug
-from jobs import fresh
+from jobs import fresh, preserve_legacy_resumes
+from environment import tool_path, tool_env, compiler_download_flags, settings
 
 ASSETS = Path(__file__).resolve().parent.parent / 'assets'
 
@@ -14,6 +15,8 @@ def escape(text):
     return ''.join(replacements.get(c, c) for c in text)
 
 def render(store, job_id, draft, compile_pdf=True):
+    if compile_pdf:
+        settings(store.workspace)  # Do not mutate a package before resolving unknown download consent.
     job_id = slug(job_id)
     assessment = store.read(f'jobs/{job_id}.json')
     fresh(store, assessment)
@@ -72,6 +75,7 @@ def render(store, job_id, draft, compile_pdf=True):
         raise ValueError('Unfilled layout slot')
     package = store.root / 'packages' / job_id
     with store.lock():
+        preserve_legacy_resumes(store, job_id)
         package.mkdir(parents=True, exist_ok=True)
         (package / 'resume.tex').write_text(template, encoding='utf-8')
         atomic(package / 'draft.json', draft)
@@ -94,19 +98,21 @@ def render(store, job_id, draft, compile_pdf=True):
             (package / stale).unlink(missing_ok=True)
         if not compile_pdf:
             return {'package': str(package), 'status': 'draft'}
-        compiler = shutil.which('tectonic')
+        compiler = tool_path(store.workspace, 'tectonic')
         if not compiler:
             raise ValueError('Tectonic is missing. Source saved as draft; follow references/setup.md')
         try:
-            import fitz
+            import pymupdf as fitz
         except (ImportError, OSError):
             raise ValueError('PDF QA needs PyMuPDF in this Python environment. Source saved as draft; install PDF dependencies in the workspace .venv before compiling.') from None
         try:
-            p = subprocess.run([compiler, '--keep-logs', '--outdir', str(package), str(package / 'resume.tex')], capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=180)
+            p = subprocess.run([compiler, *compiler_download_flags(store.workspace), '--keep-logs', '--outdir', str(package), str(package / 'resume.tex')], capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=180, env=tool_env(store.workspace))
         except subprocess.TimeoutExpired:
             raise ValueError('PDF compilation timed out. Source saved as draft; check Tectonic and first-run TeX bundle network/cache access before retrying.') from None
         (package / 'compile-output.txt').write_text(p.stdout + p.stderr, encoding='utf-8')
         if p.returncode or not (package / 'resume.pdf').exists() or 'Missing character:' in p.stdout + p.stderr:
+            if compiler_download_flags(store.workspace):
+                raise ValueError('PDF compilation could not finish with cached resources. Downloads are deferred by the user; keep this draft and request installation permission only when needed before resuming setup.')
             raise ValueError('Compilation failed or glyphs are missing; inspect compile-output.txt. First-run TeX downloads may need network access. The package remains draft.')
         doc = fitz.open(package / 'resume.pdf')
         extracted = '\n'.join(page.get_text() for page in doc)

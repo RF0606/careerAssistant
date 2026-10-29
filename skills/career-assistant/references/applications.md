@@ -7,7 +7,13 @@ explicit job IDs and maximum submissions; grants expire after 24 hours. Batch sc
 is the reviewed concrete shortlist, not permission to apply to arbitrary jobs.
 
 1. Check canonical URL and employer/requisition/title duplicates. Review possible
-   reposts; do not automatically override deduplication. Assess eligibility and JD.
+   reposts. Distinct verified requisition IDs at the same employer are separate
+   positions even when their titles match. Matching URLs or requisition IDs remain
+   duplicates. If only titles match and a requisition is unknown, ask the user to
+   confirm separate positions from the actual postings; use application-add's
+   job-scoped --review-input to save the reviewed application IDs, confirmation and
+   evidence. A title-only review cannot bypass an uncertain previous submission.
+   Assess eligibility and JD.
 2. Create application-add for an actionable job. Prepare a current ready resume.
 3. Open the verified employer application link using supported browser tools.
    Reuse an authenticated session only when the intended identity is clear.
@@ -33,6 +39,10 @@ is the reviewed concrete shortlist, not permission to apply to arbitrary jobs.
 6. Immediately before clicking, call begin-submit. It records an uncertain intent
    atomically and rechecks authorization, profile and PDF. Click final Submit ONCE
    in that same reviewed browser session. This helper does not itself click a site.
+   Prepare saves the exact PDF and supporting package in an immutable per-attempt
+   directory. Keep its returned resume_path and hash as the historical attachment;
+   later drafts may change the live package. A changed live PDF still invalidates
+   preparation before a click. Do not change tracker paths manually.
 7. Inspect the actual result. Persist a tool-observed confirmation screenshot or
    text under .career-assistant/evidence, then call outcome confirmed with exact
    confirmation text/URL, latest attempt_id, and next action. Every outcome for
@@ -57,3 +67,8 @@ failures and next steps. Record site-specific repairs as dated observations; do 
 promote mock tests to live site verification. Never lower user fit constraints just
 to fill a batch count. Without browser tools, produce materials and explain the
 precise missing capability; do not claim autonomous submission support is active.
+
+For an older attempt pointing to the live PDF, rendering first preserves the exact
+hash-matched original and updates that historical pointer. If the original is
+missing or changed, recover it from a verified local backup before regenerating;
+never substitute a new draft or fabricate the old attachment.

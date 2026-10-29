@@ -44,6 +44,9 @@ profile-update and actual change_confirmation instead of restoring all knowledge
    application records and their evidence/packages; conflicting histories stop.
    Grants are cleared and prepared attempts paused. Submitted and uncertain
    attempts remain, so do not repeat an uncertain final click.
+   Per-attempt PDF/source snapshots are included and preserved byte-for-byte,
+   including their original schema. Distinct requisitions at one employer may
+   share a title; saved user reviews of title-only matches survive restore.
 5. Run status and inspect role_issues. Install/update this generic skill for the
    chosen host if needed, then role-retry for missing personal skills; preserve the
    saved private guide. If its content or host selection needs changing, review

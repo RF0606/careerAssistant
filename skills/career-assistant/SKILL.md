@@ -21,7 +21,13 @@ promote them into shared references or publish them as default knowledge.
 ## Entry and routing
 
 - “帮我初始化信息”, “初始化职业档案”, or “initialize my career profile”: read
-  [onboarding](references/onboarding.md), run `scripts/career.py --workspace <root> init`,
+  [onboarding](references/onboarding.md) and [setup](references/setup.md). Inspect
+  dependencies and host tools first, reuse a supported host/PATH Python or run the
+  bundled native Python bootstrap, then run `career.py setup` with the observed
+  browser/search status. Automatically install missing dependencies in this
+  workspace when current permissions permit; ask only for an actual required
+  permission or a user choice. Resume setup after approval, verify installed tools,
+  then run `scripts/career.py --workspace <root> init` using its returned Python,
   inspect `status`, and begin or resume the next step. Do not explain only how to
   initialize: lead the conversation and persist each confirmed answer.
 - A full JD, scoring request, or job-search request: read [matching](references/matching.md).
@@ -79,3 +85,6 @@ Skills and scripts assist the host agent; they do not include a hosted model or 
 background job bot. Search/browser availability and site behavior vary. Record what
 actually worked and what needs user action. Never call a draft PDF ready or a click
 submitted without the required evidence.
+Dependency installation never grants site login, tool trust, CAPTCHA/2FA handling
+or application permission. Do not modify global host policy, registry, shell
+profiles or TLS settings to make an installation succeed.

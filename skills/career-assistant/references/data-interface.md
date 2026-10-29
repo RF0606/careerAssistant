@@ -9,6 +9,8 @@ profile inputs to hold passwords or sensitive identity numbers.
 python <skill>/scripts/career.py --workspace <root> init
 python <skill>/scripts/career.py --workspace <root> doctor --host codex --probe-writes
 python <skill>/scripts/career.py --workspace <root> doctor --pdf-smoke
+python <skill>/scripts/career.py --workspace <root> setup --host codex --browser existing --search existing
+python <skill>/scripts/career.py --workspace <root> recover-setup --choice defer --confirmation <actual-user-request>
 python <skill>/scripts/career.py --workspace <root> import-source <file> --kind document
 python <skill>/scripts/career.py --workspace <root> profile-update --input <private-json>
 python <skill>/scripts/career.py --workspace <root> preferences-update --input <private-json>
@@ -21,6 +23,16 @@ python <skill>/scripts/career.py --workspace <root> visual-review <job-id> --inp
 ```
 
 ## Sources and facts
+
+Setup is a separate operational workflow with no career facts or grants. Its
+resumable state is private at setup/environment.json and is excluded from career
+backups. Browser/search values must reflect the host's actual tool inspection;
+missing installs the private browser fallback, while defer records the user's
+choice. Omit --no-downloads during normal permitted installation. Statuses include
+ready, partial, approval_required, host_reload_required and setup_in_progress.
+Check each step, state_saved and next_action; neither CLI presence nor software
+installation is proof of site login or a ready personal PDF. See setup.md for
+native no-Python bootstrapping and the user permission flow.
 
 Import returns a generated source_id. Profile update shape:
 
@@ -39,7 +51,14 @@ Preferences-update accepts a partial object with only known keys:
 targets (ordered objects/strings), locations, work_authorization, compensation,
 work_modes, commute, contracts, travel, start_date, exclusions, include_projects
 (boolean, default false), submission_policy (per-application or per-batch, initially null).
-Unknown preferences remain null/empty. The host records the user's actual choice.
+Lists must remain arrays: unknown targets/locations/authorization/work modes/
+contracts/exclusions use []. Targets are nonempty strings or objects with a
+nonempty id/title; id uses the normal ID rules and optional priority is a positive
+integer. Compensation uses an object ({} when unknown); optional commute/travel
+answers and start_date may be null. Invalid changes are rejected before any write.
+If an older version saved a malformed field, status reports the field and
+preferences-update can correct it without resetting other values or facts.
+The host records the user's actual choice.
 
 Role-create requires id, title and a nonempty focus list for any user-selected
 direction. Optional tailoring_guidance is a list of direction-specific writing
@@ -114,17 +133,34 @@ sections and bounds; status stays needs-visual-review until that observation.
 
 ```text
 career.py application-add <job-id>
+career.py application-add <job-id> --review-input <private-duplicate-review-json>
 career.py grant --input <grant-json>
 career.py prepare <application-id> --input <review-json>
 career.py begin-submit <application-id>
 career.py outcome <application-id> --input <observation-json>
 ```
 
+Different verified requisition IDs at one employer remain separate despite matching
+titles. Matching canonical URLs or employer/requisition IDs cannot be overridden.
+For a title-only match without distinct known IDs, duplicate-review JSON requires
+job_id, application_ids (all current ambiguous IDs), user_confirmation (actual human
+wording), and evidence explaining the separate postings. Review is saved on the
+new record and cannot bypass an original unknown submission.
+
 Grant JSON: job_ids, max_submissions, user_request (actual human request).
 Prepare JSON: grant_id, all_required_fields_reviewed true, unresolved_fields [],
 review_evidence, answers [{field,value,fact_ids,high_impact}]. User-confirmed evidence
 is required for high-impact answers. Browser controls, attachment and all required
 questions must be inspected even if answers is empty for a simple form.
+
+Prepare saves immutable materials at packages/<job-id>/attempts/<attempt-id>/.
+Its resume_path points to that exact PDF; draft_resume_path is the mutable draft
+used to check that pre-click inputs have not changed. snapshot.json records hashes
+for the PDF, available source/report files and the assessed facts/preferences.
+Begin-submit returns resume_path and pdf_sha256 as well as attempt_id. Subsequent
+rendering preserves these snapshots. Legacy clicked attempts are moved to a frozen
+PDF only when its original hash verifies; missing/mismatched originals stop before
+the live package is overwritten. Recover the original from a verified local backup.
 
 Begin-submit persists an unknown attempt before the host clicks once. Outcome
 JSON: result confirmed/failed/unknown/needs-user, detail, next_action. Include the
@@ -141,6 +177,8 @@ Tracker statuses are Pending, Needs user, Blocked, Submitted. The root records c
 matches the list length. Writes use an exclusive lock and atomic replacement. A
 stale lock is not automatically stolen: inspect processes and the last attempt
 before manually removing it. Unknown schema versions are preserved and rejected.
+Atomic replacement briefly retries Windows sharing/access conflicts. Persistent
+denials still fail while preserving the original; host policy is never bypassed.
 
 ## Knowledge maintenance
 

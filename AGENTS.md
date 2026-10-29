@@ -16,6 +16,10 @@ read `skills/career-assistant/SKILL.md` and its onboarding reference, then guide
 user through initialization in this workspace. Use the bundled helpers and save
 progress. If needed, install project skills with `python install.py --host codex`.
 Do not require the user to know command names or hand-edit JSON.
+Initialization first detects/reuses dependencies and supported host tools, then
+automatically installs missing local components when current permissions permit.
+Read the skill's setup reference. Ask for an actual denied installation permission;
+preserve a user deferral and never change host security policy to bypass it.
 
 For resume and job requests, use that same skill and its routed references.
 Use only this workspace's `.career-assistant` data. Examples are fictional.

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import subprocess
 from pathlib import Path
 if sys.version_info < (3, 10):
     print(json.dumps({'error': 'Python 3.10+ is required. Select a supported python/python3/py -3 interpreter or install it from python.org; no career data was written.'}), file=sys.stderr)
@@ -12,6 +13,7 @@ from storage import Store, load, slug
 import profiles
 import jobs
 import resume
+from environment import SetupError
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
@@ -20,6 +22,9 @@ def main(argv=None):
     for name in ['init', 'status', 'workday-init']:
         sub.add_parser(name)
     p = sub.add_parser('doctor'); p.add_argument('--host', choices=['codex','claude','both']); p.add_argument('--probe-writes', action='store_true'); p.add_argument('--pdf-smoke', action='store_true')
+    p = sub.add_parser('setup'); p.add_argument('--host', choices=['codex','claude','both']); p.add_argument('--browser', choices=['existing','missing','defer','inspect'], default='inspect'); p.add_argument('--search', choices=['existing','missing','defer','inspect'], default='inspect'); p.add_argument('--no-downloads', action='store_true')
+    choice = p.add_mutually_exclusive_group(); choice.add_argument('--defer-installation', action='store_true'); choice.add_argument('--resume-installation', action='store_true')
+    p = sub.add_parser('recover-setup'); p.add_argument('--choice', choices=['defer','resume'], required=True); p.add_argument('--confirmation', required=True)
     p = sub.add_parser('import-source'); p.add_argument('path', type=Path); p.add_argument('--kind', choices=['document','user-statement'], default='document')
     for name in ['profile-update', 'preferences-update', 'assess', 'grant']:
         p = sub.add_parser(name); p.add_argument('--input', required=True, type=Path)
@@ -28,7 +33,7 @@ def main(argv=None):
     p = sub.add_parser('checkpoint'); p.add_argument('step'); p.add_argument('--note', default='')
     p = sub.add_parser('render'); p.add_argument('job_id'); p.add_argument('--input', required=True, type=Path); p.add_argument('--source-only', action='store_true')
     p = sub.add_parser('visual-review'); p.add_argument('job_id'); p.add_argument('--input', required=True, type=Path)
-    p = sub.add_parser('application-add'); p.add_argument('job_id')
+    p = sub.add_parser('application-add'); p.add_argument('job_id'); p.add_argument('--review-input', type=Path)
     for name in ['prepare', 'outcome']:
         p = sub.add_parser(name); p.add_argument('application_id'); p.add_argument('--input', required=True, type=Path)
     p = sub.add_parser('begin-submit'); p.add_argument('application_id')
@@ -45,6 +50,22 @@ def main(argv=None):
     data = load(args.input) if hasattr(args, 'input') else None
     command = args.command
     active_host = 'claude' if Path(__file__).resolve().parents[3].name == '.claude' else 'codex'
+    if command == 'setup':
+        from environment import setup
+        return setup(args.workspace, args.host or active_host, args.browser, args.search, not args.no_downloads, args.defer_installation, args.resume_installation)
+    if command == 'recover-setup':
+        from environment import recover_setup
+        return recover_setup(args.workspace, args.choice, args.confirmation)
+    if command == 'render' and not args.source_only or command == 'import-source' and args.path.suffix.lower() == '.pdf':
+        from environment import configured_python
+        selected = configured_python(args.workspace)
+        if selected and Path(sys.prefix).absolute() != selected.parent.parent.absolute():
+            result = subprocess.run([str(selected), str(Path(__file__).resolve()), *(argv if argv is not None else sys.argv[1:])], capture_output=True, text=True, encoding='utf-8', errors='replace')
+            if result.returncode:
+                try: detail = json.loads(result.stderr)['error']
+                except (ValueError, KeyError): detail = 'Configured PDF runtime failed; rerun setup to verify the workspace environment.'
+                raise ValueError(detail)
+            return json.loads(result.stdout)
     if command in {'backup', 'backup-verify', 'restore-plan', 'restore', 'migrate-plan', 'migrate', 'maintenance-recover', 'history'}:
         import maintenance
         if command == 'backup': return maintenance.backup(store, args.label)
@@ -86,7 +107,7 @@ def main(argv=None):
     if command == 'assess': return jobs.assess(store, data)
     if command == 'render': return resume.render(store, args.job_id, data, not args.source_only)
     if command == 'visual-review': return resume.visual_review(store, args.job_id, data)
-    if command == 'application-add': return jobs.add_application(store, args.job_id)
+    if command == 'application-add': return jobs.add_application(store, args.job_id, load(args.review_input) if args.review_input else None)
     if command == 'grant': return jobs.grant(store, data)
     if command == 'prepare': return jobs.prepare(store, args.application_id, data)
     if command == 'begin-submit': return jobs.begin_submit(store, args.application_id)
@@ -99,6 +120,9 @@ if __name__ == '__main__':
         sys.stderr.reconfigure(encoding='utf-8')
     try:
         print(json.dumps(main(), ensure_ascii=False, indent=2))
+    except SetupError as exc:
+        print(json.dumps({'error': exc.result['reason'], **exc.result, 'state_saved': False}, ensure_ascii=False), file=sys.stderr)
+        sys.exit(1)
     except (ValueError, KeyError, FileNotFoundError, TimeoutError) as exc:
         print(json.dumps({'error': str(exc)}, ensure_ascii=False), file=sys.stderr)
         sys.exit(1)

@@ -6,7 +6,7 @@ from pathlib import Path, PurePosixPath
 import stat
 import uuid
 from zipfile import ZipFile, ZIP_DEFLATED, BadZipFile
-from storage import SCHEMA, VERSION, atomic, atomic_bytes, digest, inside, json_bytes, load, no_secrets, now, slug
+from storage import SCHEMA, VERSION, atomic, atomic_bytes, digest, inside, json_bytes, load, no_secrets, now, slug, validate_preferences
 
 CORE = {'workspace.json', 'profile.json', 'preferences.json', 'onboarding.json', 'sources.json', 'tracker.json'}
 REQUIRED = CORE - {'workspace.json'}
@@ -128,6 +128,13 @@ def valid_member(name):
     return permitted(name)
 
 
+def active_document(name):
+    # Attempt snapshots are immutable historical bytes, including their old schema.
+    parts = name.split('/')
+    return (name in CORE or len(parts) == 2 and parts[0] in {'roles', 'jobs'} and name.endswith('.json')
+            or len(parts) == 3 and parts[0] == 'packages' and parts[2] in {'validation.json', 'match-report.json'})
+
+
 def validate_data(files, schema):
     if schema not in {1, SCHEMA} or not REQUIRED <= set(files):
         raise ValueError('Unsupported or incomplete career-data schema; preserve data')
@@ -138,8 +145,9 @@ def validate_data(files, schema):
             raise ValueError('Mixed or unsupported active data schemas; preserve data')
         return value
     docs = {name: document(name) for name in CORE if name in files}
+    validate_preferences(docs['preferences.json'])
     for name in files:
-        if name.startswith(('roles/', 'jobs/')) and name.endswith('.json') or name.startswith('packages/') and name.endswith(('/validation.json', '/match-report.json')):
+        if name not in CORE and active_document(name):
             document(name)
     facts, sources = docs['profile.json']['facts'], docs['sources.json']['sources']
     if not isinstance(facts, dict) or not isinstance(sources, dict):
@@ -245,8 +253,7 @@ def upgrade(files, wid, stamp):
     if schema not in {1, SCHEMA}:
         raise ValueError('No supported migration path; preserve data')
     for name, data in list(files.items()):
-        active = name in CORE or name.startswith(('roles/', 'jobs/')) and name.endswith('.json') or name.startswith('packages/') and name.endswith(('/validation.json', '/match-report.json'))
-        if not active:
+        if not active_document(name):
             continue
         value = json.loads(data.decode('utf-8-sig'))
         value['schema_version'] = SCHEMA
@@ -275,6 +282,7 @@ def nonempty(files):
 
 
 def combine(current, incoming, operation):
+    from jobs import duplicate_kind, reviewed_separate
     incoming = dict(incoming)
     if operation == 'restore':
         # Immutable sources/audit and current application artifacts stay available.
@@ -290,8 +298,10 @@ def combine(current, incoming, operation):
                 if other and other['status'] == 'Submitted' and row['status'] != 'Submitted':
                     raise ValueError('Backup/current submission histories conflict; restore into a separate empty workspace for manual reconciliation')
                 for candidate in by_id.values():
-                    if candidate['id'] != row['id'] and (candidate['url'] == row['url'] or candidate['company'].casefold() == row['company'].casefold() and candidate['title'].casefold() == row['title'].casefold()):
-                        raise ValueError('Conflicting duplicate application histories; reconcile before restoring')
+                    if candidate['id'] != row['id']:
+                        kind = duplicate_kind(candidate, row)
+                        if kind == 'exact' or kind == 'ambiguous' and not (reviewed_separate(candidate, row) or reviewed_separate(row, candidate)):
+                            raise ValueError('Conflicting duplicate application histories; reconcile before restoring')
                 by_id[row['id']] = row
             restored['records'] = list(by_id.values())
             restored['record_count'] = len(restored['records'])

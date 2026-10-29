@@ -32,7 +32,8 @@ Suggested prompt after extracting this ZIP into a new career-assistant directory
    fictional fixture; do not substitute headless tests for host browser evidence.
 5. Exercise both host natural-language entrypoints and personal role routing where
    accounts are usable. Clearly record permission/auth failures as unverified, not passed.
-   `tests/host_smoke.py` now starts with NO profile and runs five fresh sessions:
+   `tests/host_smoke.py` starts with NO profile or preinstalled project skill,
+   outside the source repo, and runs five fresh sessions:
    initialization, confirmed facts, checkpoint recovery, role creation and invocation.
    Require disk checks AND manual transcript review. Stop on a denied helper;
    explain which permission/login the user must fix. Do not bypass host policy.
@@ -46,9 +47,11 @@ Suggested prompt after extracting this ZIP into a new career-assistant directory
    Fix demonstrated failures, update tests and docs/VALIDATION.md with the actual
    result. Keep real-user state, credentials, logs and generated personal skills out
    of tracked files. Regenerate the release manifest after changes.
-   Include interrupted role generation/retry, verification of every requested
+   Include frozen Submitted/unknown materials across rerender and restore,
+   distinct requisitions/title-only user review, invalid preference updates,
+   bounded Windows file-sharing retry, interrupted role generation/retry and verification of every requested
    host's skill, and stale role/route context across resume and submission steps.
-8. Run `python release.py pack --output outputs/career-assistant-v0.1.8.zip`.
+8. Run `python release.py pack --output outputs/career-assistant-v0.1.11.zip`.
    The pack command also writes startup instructions and SHA256SUMS.txt. Extract
    the final ZIP, verify its manifest, install both host copies and rerun tests there.
 
@@ -65,7 +68,7 @@ repository and push the clean source. Typical commands, issued separately:
 ```text
 git init -b master
 git add README.md LICENSE VERSION AGENTS.md CLAUDE.md START_HERE_CODEX.md .gitignore .gitattributes .github install.py release.py requirements.txt package.json package-lock.json skills tests examples docs release_manifest.json
-git commit -m "feat: release Career Assistant v0.1.8"
+git commit -m "fix: release Career Assistant v0.1.11"
 gh repo create careerAssistant --public --source . --remote origin --push
 ```
 
@@ -90,6 +93,6 @@ Preserve Projects OFF by default, with an optional separate block after Work Exp
 Preserve locally stored Workday username/password pairs and sanitized in-memory filling.
 Do not inherit any other user's standing registration or submission permission.
 Actual platform support is host-driven; prioritize verified form changes and concise
-blocked explanations. v0.1.8 has no hosted model backend or background scheduler.
+blocked explanations. v0.1.11 has no hosted model backend or background scheduler.
 Current acceptance is development-preview only until both real-host conversation
 gates pass. See docs/VALIDATION.md; a safe ZIP alone is not full product acceptance.

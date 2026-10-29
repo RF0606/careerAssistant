@@ -1,3 +1,286 @@
+# v0.1.10 acceptance — 2026-10-28 (America/New_York)
+
+**Development preview.** Initialization now detects, installs, verifies and resumes
+workspace dependencies. Prior v0.1.9 repairs and their evidence are preserved in
+[VALIDATION_HISTORY.md](VALIDATION_HISTORY.md). Only reusable software and fictional
+tests ship; runtime tools, setup state, host config and user data remain local.
+
+## Current verification
+
+- Native Windows bootstrap installed a real private managed CPython runtime without
+  registry/PATH/global policy changes. Both existing-runtime and missing-runtime
+  detection paths are exercised separately.
+- A fresh isolated workspace with empty PATH, no PDF packages, no Tectonic and an
+  empty TeX cache automatically installed official binary wheels and a verified
+  Tectonic 0.17.0 asset, warmed the canonical template and compiled a fictional
+  one-page resume. An offline repeat reused all completed dependencies.
+- A missing-browser scenario installed Microsoft's Playwright MCP/Chromium in a
+  private workspace, tested engine launch and preserved existing host settings
+  while adding project-only servers. Status correctly remained host_reload_required.
+- **151 Python tests passed** in source, retaining the prior 119 plus 32 environment
+  regressions. Cases cover actual permission classification, rejection without a
+  fallback bypass, user deferral/resumption, native no-Python detection, partial
+  venv/pip recovery, import notices, trusted downloads/checksums/archive paths,
+  project config preservation and offline compilation after a user deferral.
+- **21 browser mock scenarios passed.** The new private Node LTS installation also
+  launched its downloaded Chromium, and Microsoft's real local MCP server completed
+  a stdio initialize/tools-list exchange exposing 25 tools. This is not a claim that
+  a host has already trusted/reloaded the project or logged into a real site.
+- **Five native Codex conversations passed** disk checks and manual transcript
+  review, starting without an installed project skill or profile. Initialization
+  saved dependency setup state before career progress, and resumed conversations
+  preserved confirmed facts/preferences. This host-only scenario explicitly reused
+  existing dependencies/offline cache; the independent cold test performed installs.
+  Exploratory missing-path/tool reads recovered. A guessed operational-state read
+  was corrected; the helper now gives a specific non-migration error for that case.
+- A real fictional PDF from the newly installed private toolchain passed one-page
+  Letter, extraction and PNG inspection. Calling PDF rendering through the bare
+  managed Python correctly delegated to the selected workspace venv. Template
+  SHA-256 remains 0fb02c175f5366a5f687fd65fd911f3b11ece8111cc273f000b25bf828591915.
+- Final handoff repeats manifest/allowlist verification, extraction, both generic
+  host installations and the full Python/browser suites. Private run logs retain
+  the exact outcome. No real account or employer application is used.
+
+## Permission and data boundaries
+
+Installation permission is distinct from workspace tool trust and site sign-in.
+Actual denials produce a concrete permission request; helper/network failures
+remain pending, with no security-policy bypass or fabricated readiness.
+Search can use existing tools or a connected browser. Setup cannot install an
+account or certify real employer portals. Configured browser profiles are private.
+
+Setup state/tools are excluded from public releases and career backups. Career
+facts, preferences, roles, grants and existing application attempts are untouched.
+The canonical resume template and Projects-off default remain unchanged.
+
+## Remaining platform acceptance
+
+The actual installation run is Windows evidence. POSIX scripts and macOS/Linux
+asset selection do not constitute a real Mac desktop/model or employer-site run.
+Cloud CI results from older versions do not certify this release until rerun.
+Private evidence belongs under ignored test-results/v0.1.10-setup-* directories.
+
+---
+
+# v0.1.9 acceptance — 2026-10-28 (America/New_York)
+
+**Development preview.** This repair release addresses the download audit's three
+reproducible defects and improves Windows write recovery and first-use acceptance.
+Older evidence is preserved in [VALIDATION_HISTORY.md](VALIDATION_HISTORY.md).
+Only standard software, workflows, schemas, templates and fictional tests ship.
+
+## Repair scope
+
+- Prepared applications retain an independent hashed PDF/source/JD/fact snapshot.
+  Rerendering the live package preserves Submitted and unknown attempts. Older
+  live-path attempts are frozen only after the original PDF hash verifies; a lost
+  original stops regeneration before any package overwrite.
+- Distinct verified requisitions at the same employer may share a title. Exact
+  duplicates still stop. Ambiguous title-only matches require a current job-scoped
+  user confirmation and evidence; an uncertain original cannot be bypassed.
+  The same identity rules apply when restoring application history.
+- Preference shapes are checked before writes. Invalid values leave disk state
+  unchanged; a helper update can repair a malformed older field without resetting
+  other preferences or facts. Invalid stored shapes produce actionable errors.
+- Atomic writes briefly retry Windows sharing/access conflicts. Persistent and
+  non-Windows/policy denials still stop, preserving the previous file.
+- Host acceptance starts from the complete public download outside the source
+  repository with no profile or installed project skills. Optional preinstallation
+  is a separate explicitly selected test mode.
+
+## Verification
+
+- Windows Python 3.13.1: **119 tests passed** in source and a clean extracted
+  candidate ZIP, including the original 95 tests and 24 new regressions. Coverage
+  includes legacy/new Submitted and unknown attempts across rerender, snapshot
+  tampering/interruption, backup/restore/schema migration, duplicate reviews,
+  malformed preferences, and a real Windows reader lock released during writing.
+- **21 automated fictional browser scenarios passed.** No production account or
+  employer application was used.
+- **Five native Codex CLI 0.165.0-alpha.1.2 conversations passed** disk assertions
+  and manual review: uninstalled first-use initialization, confirmed facts,
+  unchanged-state recovery, selected preferences/private skills, and personal
+  skill invocation. The initial directory had no Git repository, profile or
+  installed project skills. Four exploratory/local verification commands failed
+  initially and recovered; no career-helper policy or authentication failure
+  remained. The final captured JD matches the supplied text after whitespace
+  normalization; unsupported facts stay unknown and source-only stays draft.
+- **Three real PDFs passed** one-page Letter, extracted text and actual PNG
+  inspection. Default Projects is absent; requested Projects follows Work
+  Experience and precedes Education. The canonical template remains SHA-256
+  0fb02c175f5366a5f687fd65fd911f3b11ece8111cc273f000b25bf828591915.
+- The current Codex in-app browser completed fictional in-memory login, exact
+  chooser upload, one authorized click per job, confirmation/hash evidence,
+  unknown-result preservation and rejected retry, then reconciliation from the
+  original Candidate Home receipt. CAPTCHA stopped before credential entry.
+  Both actual uploaded PDFs and all attempt snapshot bytes survived rerender.
+  A private backup restored both into an empty workspace with matching hashes,
+  preserved Submitted/unknown history and no submission grants.
+- Public manifest/allowlist and deterministic asset checks passed. Final handoff
+  repeats extraction, both host installations and the Python/browser suites;
+  its logs remain private under the directory below. This version has not been
+  pushed to GitHub or verified by a new cloud CI run in this local acceptance.
+
+Private evidence belongs under ignored test-results/v0.1.9-fixes-* directories.
+No real employer application or personal profile is used. The canonical one-page
+template remains unchanged; Projects stays off by default.
+
+## Remaining environment acceptance
+
+Claude Code model conversations, macOS desktop conversations and live employer
+portals require their own usable accounts and environments. Historical CI runs
+are evidence for the version they tested, not a new v0.1.9 cloud run.
+Missing Python/PDF/browser tools and host denials are reported as blockers, never
+as completed work. Ordinary onboarding never publishes a repository or user data.
+
+---
+
+# v0.1.8 acceptance — 2026-10-13 (America/New_York)
+
+**Development preview.** Standard-only software can be distributed with these
+limits; complete dual-host/live-platform acceptance is still pending. Historical
+v0.1.0–v0.1.7 evidence remains in [VALIDATION_HISTORY.md](VALIDATION_HISTORY.md).
+No real user profile, credential, private route or personal skill is bundled.
+
+## Current scope
+
+| Area | Evidence/status |
+|---|---|
+| Local profile, preferences, onboarding and role skill lifecycle | Helper tests plus five current v0.1.8 native Codex CLI conversations; confirmed fictional facts, recovery, Codex-only personal skill creation and invocation passed |
+| Private backup, restore, history and schema 1→2 migration | Local fictional regression suite; credential/browser exclusion, newer application history, stale plans, tampering, interruption and rollback covered |
+| Python portability | 95 tests passed locally and in all five hosted combinations: Linux/Windows 3.10/3.13 and macOS 3.13 |
+| Browser/application guards | 21 automated scenarios passed again locally; earlier actual Codex IAB mock evidence retained |
+| PDF | Two real Tectonic PDFs passed one-page Letter, extraction/bounds and visual review; default Projects absent and requested Projects order correct |
+| Public bundle/Release | First CI's 61-file public bundle verified; all four cloud/local assets byte-identical. Version tags repeat CI before gated prerelease publication |
+| Actual Codex conversations | 10 independent CLI conversations passed disk assertions and transcript review, covering onboarding and new maintenance; another blank trial-workspace environment conversation passed |
+| Actual Codex browser | Earlier local login/upload/confirmed and unknown-result recovery passed; no live employer application |
+| Claude Code | Actual conversations deferred by owner; earlier OAuth 401 unresolved |
+| macOS desktop / real Workday | Unverified; hosted helper tests cannot certify a desktop model conversation or employer portal |
+
+## Local knowledge maintenance
+
+Schema 2 adds a persistent workspace UUID and helper-owned preference revision/time.
+Schema 1 is preserved and requires a reviewed migration plan; unsupported versions
+stop without resetting facts. Active core/role/job/package schemas migrate together.
+Old assessments become stale; immutable historical snapshots keep their original
+schema. New/resumed initialization never mixes old data with empty new defaults.
+
+Backups use a private allowlist and per-file hashes. Excluded directories are
+skipped before reading: tests patch the file reader to fail if credentials/browser
+contents are touched. Grants and generated host skills are excluded too. Private
+backups remain ignored plaintext career data, distinct from the public ZIP.
+
+Restores verify the archive and current fingerprint, list changed/removed paths,
+save a prechange backup and journal writes with undo objects. Populated different
+workspace identities, stale plans, traversal/duplicate paths and content tampering
+are rejected. Newer current application history, evidence and packages survive
+restoring older knowledge; Submitted/unknown attempts remain, grants are cleared,
+and prepared attempts are paused. Original uncertain attempts can still reconcile.
+Missing personal host skills regenerate through saved role configurations.
+
+Regression coverage includes a denied write followed by complete rollback, a
+simulated process interruption that blocks normal operations until recovery, and
+preservation of external edits rather than partial rollback. These use fictional
+fixtures and guard stubs, not real employer submissions or PDF acceptance evidence.
+
+Two separate fictional default/Projects workspaces produced real PDFs; both PNG
+previews were opened and checked for legibility, alignment, clipping and overlap.
+The shared template remains SHA-256
+`0fb02c175f5366a5f687fd65fd911f3b11ece8111cc273f000b25bf828591915`.
+Default PDF SHA-256:
+`df31f3d68f7cf42b75c373abecb9a48699566764c642d2565bbc46fbbfafde9a`.
+Requested Projects PDF SHA-256:
+`881dae18c5d18ee4076399ffcecc72698a14c90028c62052879ba92bb328e9ab`.
+A real-PDF private backup restored into a third empty fictional workspace with
+identical facts and PDF bytes, no grants, and both personal host skills successfully
+regenerated. Skill frontmatter validation and workflow YAML syntax checks passed.
+
+## Executed acceptance
+
+- Windows Python 3.13.1: **95 tests passed**; clean extracted ZIP plus both generic
+  host installations also passed **95 tests**. Both local source and extracted
+  bundle passed **21 mock browser scenarios**. Core requires only the standard
+  library; PDF acceptance used the available local Tectonic/PyMuPDF runtime.
+- [First complete GitHub CI run](https://github.com/RF0606/careerAssistant/actions/runs/38433713858)
+  at source commit `8010b5571162d5b7417177016f0551a94bf3c6c5` passed every job:
+  **95 tests each** on Ubuntu Python 3.10/3.13, Windows Python 3.10/3.13 and macOS
+  Python 3.13, **21 browser scenarios**, and independently verified public bundling.
+- Downloaded the CI distribution artifact and compared all four files byte for
+  byte with the corresponding local build; ZIP, checksum, startup text and
+  aggregate checksums matched. The ZIP contains exactly 60 allowlisted source
+  files plus the manifest. It contains no local profile, routes, personal skills,
+  private backups, credentials or test-results.
+
+This record describes pre-publication source acceptance. Final tagged runs and
+published assets can be inspected in
+[Actions](https://github.com/RF0606/careerAssistant/actions) and
+[Releases](https://github.com/RF0606/careerAssistant/releases); the tag workflow
+rechecks the exact final commit, including documentation and manifest updates.
+
+## Post-release real-data preflight
+
+The unchanged v0.1.8 software was tested again through the installed native Codex
+CLI 0.162.0-alpha.17.2, retaining the user's existing model and permissions. The
+older npm shim was not selected. Every conversation used a new ephemeral session;
+this validates disk-based conversational recovery, not a desktop GUI restart.
+
+- Five fictional-user sessions passed initialization, source-backed fact saving,
+  unchanged-state recovery, preference selection before private route/skill
+  generation, and personal-skill invocation against a complete supplied JD.
+  Only the Codex personal skill was requested/generated. Missing communication
+  evidence remained unknown; employer/school locations and metrics were not invented.
+  Source-only rendering remained draft until a separate actual PDF review.
+- Five additional conversations passed backup/history, a preference correction
+  that made the old assessment stale, authorized same-workspace restore, schema
+  1-to-2 migration, and interrupted-operation recovery. The maintainer explicitly
+  converted this fictional fixture's active files to schema 1 and later injected
+  interruption after journaling; these are labelled test setups, not real-user
+  migration or a desktop process-kill test. The interrupted writer released its
+  lock, and the host used maintenance-recover. All original facts/source references
+  remained; rollback restored operation-before data byte-for-byte. No grants,
+  applications, credentials, browser state or shared source were introduced.
+- A separate real Codex CLI environment session in the future trial workspace
+  used its project .venv Python, ran filesystem and offline TeX probes, read status
+  and saved only the environment checkpoint. The five career core files were
+  byte-unchanged, with zero facts, sources, targets, routes, personal skills and
+  applications. That workspace was extracted from the checksum-verified public ZIP.
+- Fresh project dependencies were pypdf 6.20.1 and PyMuPDF 1.28.2. Actual PDF import
+  extracted text, and the same .venv compiled both a separate fictional smoke
+  resume and the native conversation's draft. Both one-page Letter images were
+  opened and inspected; original template unchanged and Projects absent. The
+  native-draft PDF SHA-256 was
+  `bda3879f72fbcd6d85e2384533347155bf6646cff4bdd3c3468229d5432cca29`.
+
+All 11 final responses were reviewed along with command-result summaries. Four
+nonzero command results were expected schema/interruption guards or optional
+searches for absent paths, with successful follow-up; no policy/authentication
+failure occurred and no MCP tool call was made. Logs, fictional data, derived
+skills and private archives remain under ignored
+`test-results/v0.1.8-real-data-preflight/`. An operator-local first-trial plan defines
+one user, one selected direction and one full JD, including fact/PDF review and
+reopening a session; it stops before submission. No real user data was imported.
+
+This documentation adds post-release evidence; the previously published v0.1.8
+ZIP, tag and checksums remain the original immutable release. Actual real-user
+acceptance and live Workday behavior are still future work.
+
+## Publishing automation
+
+CI checks the public manifest against actual tracked paths, runs five Python
+OS/version combinations and Linux's fictional browser suite, then builds and
+independently verifies the four public assets. Release tags repeat the same checks
+at the tagged ref, require tag/VERSION/HEAD agreement and publish as prerelease.
+Actions are pinned, checkouts do not persist credentials, and contents:write is
+limited to the publication job. No model/Workday secrets are used and no private
+test evidence is uploaded. See [RELEASING.md](RELEASING.md).
+
+Private acceptance artifacts for this release belong under
+`test-results/v0.1.8-maintenance-release/`; no private logs or test workspaces are
+published. Hosted macOS helper/cold-start success is new evidence, and does not
+replace the still-unverified macOS desktop conversation or live ATS acceptance.
+
+---
+
 # v0.1.7 acceptance — 2026-10-13 (America/New_York)
 
 This section is the current status; earlier dated sections retain historical evidence.

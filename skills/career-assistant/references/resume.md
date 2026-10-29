@@ -45,3 +45,10 @@ The assessment also binds the current role configuration and private route. If
 either changes, reassess and regenerate/review the resume before reuse. A stored
 ready label alone does not establish current validity; helpers recheck the context.
 
+Submitted and uncertain attempts retain their own hash-verified package snapshots.
+The live draft can be regenerated without replacing a historical attachment.
+For a legacy attempt still referring to the live PDF, render freezes the matching
+original first. If it was already lost or changed, recover the original from a
+verified local backup before continuing; never change tracker IDs/paths to evade
+the guard or claim a new draft was the exact earlier attachment.
+

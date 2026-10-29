@@ -40,6 +40,8 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Verify public source and Git boundaries
         run: python release.py check-git
+      - name: Install conditional Python 3.10 TOML parser
+        run: python -m pip install "tomli>=2,<3; python_version < '3.11'"
       - name: Run fictional core, cold-start and maintenance tests
         run: python -m unittest discover -s tests -v
 

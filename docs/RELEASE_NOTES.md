@@ -1,3 +1,62 @@
+# Career Assistant v0.1.11 — Saved consent and MCP configuration repairs
+
+Damaged or unreadable installer state no longer becomes a fresh automatic install.
+Setup preserves the original and requests a reviewed recovery choice. The new
+recover-setup helper verifies a raw-byte backup before saving defer/resume and
+installs nothing. Text/profile/source-only work can continue independently.
+
+Browser registration parses TOML and recognizes equivalent quoted, dotted and
+inline server definitions. It validates candidate config and all requested hosts
+before writing, preserves conflicts, and rejects linked paths outside the project.
+Python 3.10 receives the conditional tomli parser. Windows PowerShell 5 runtime
+installation now handles successful native stderr progress correctly.
+
+This development preview includes automatic private dependency setup, immutable
+per-application resume artifacts and the earlier duplicate/preference repairs.
+CI and release workflows validate only reusable public source and fictional tests;
+no profile, credentials, private runtime or generated personal skill is published.
+Actual platform/model/site acceptance remains scoped in docs/VALIDATION.md.
+
+---
+
+# Career Assistant v0.1.10 — Automatic first-use environment setup
+
+Initialization now checks and reuses existing runtime/PDF/browser capabilities,
+automatically installs missing local dependencies when permitted, verifies them,
+and resumes saved onboarding. Native Windows/POSIX bootstraps cover a missing
+Python runtime. Official PyPI wheels, checksum-verified Tectonic/Node assets,
+canonical-template resource warming and a private Playwright MCP fallback are
+supported. No global PATH, registry, model or approval policy is changed.
+
+Denied installation steps require the specific user permission; successful steps
+are retained. New browser configuration remains pending host reload/trust until
+the live API is available. Account login, CAPTCHA/2FA and real-site acceptance
+remain separate. See docs/VALIDATION.md for actual evidence and platform scope.
+
+---
+
+# Career Assistant v0.1.9 — Download audit fixes
+
+Applications keep an immutable hashed package for each attempt, so editing a later
+draft preserves the original submitted/uncertain PDF and supporting evidence.
+Legacy live-path records are protected before rerender; missing originals require
+recovery from a verified local backup rather than a replacement attachment.
+
+Distinct requisitions with identical employer/title can be tracked separately.
+Title-only matches have an explicit scoped user-review path, while true duplicates
+and uncertain previous submissions retain their guards. Restore uses the same
+identity rules and preserves historical snapshots without schema rewriting.
+
+Preference shapes are validated before saving and malformed older fields can be
+repaired through the helper. Windows atomic replacement tolerates short sharing
+conflicts with bounded retries; persistent denials preserve existing data.
+
+The native-host runner now starts from an uninstalled public download outside the
+source repo. See docs/VALIDATION.md for actual verification and environment limits.
+This remains a development preview; no hosted service or real application is added.
+
+---
+
 # Career Assistant v0.1.8 — Development preview
 
 Users can ask the assistant to back up, restore and inspect changes to their local

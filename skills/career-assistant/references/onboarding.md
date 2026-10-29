@@ -14,10 +14,33 @@ blocked helper and ask the user to enable workspace writes/command execution in
 the host. Continue discussing materials, but never claim durable recovery until
 the helper succeeds. Do not work around a host denial with another write tool.
 
-Select a supported Python from PATH or host runtime discovery; read setup.md if
-missing. Run `career.py init` idempotently. Run `doctor --host <active-host> --probe-writes`, inspect host tools, record
-`checkpoint environment`. Dependencies for PDF/browser operations are optional at
-this stage. Choose conversation language from the user, not the example profile.
+Follow setup.md at the start, including when resuming initialization. Inspect host
+browser/search APIs and available Python runtimes. Prefer a supported host/PATH
+Python; if none exists, run the bundled native bootstrap. With current installation,
+network and workspace-write permission, automatically install missing dependencies
+through `career.py setup`; do not ask a redundant confirmation for already allowed
+local installation. Missing native browser access triggers the private Node/
+Playwright fallback and project-only MCP configuration, followed by a host reload.
+Use its returned Python for helpers. Run init idempotently, doctor --host
+<active-host> --probe-writes, inspect the actual setup results and save checkpoint
+environment. An installed browser is not a connected/authenticated host browser.
+If setup says approval_required or the host rejects the command, explain the
+specific missing component, installation scope and denied permission, then ask
+whether the user permits that installation. Keep the concrete command pending;
+after approval retry that same step, without changing policy or using another tool
+to bypass rejection. Network outages or unsupported assets require the matching
+recovery action, not a false claim that permission alone fixes them. Preserve an
+explicit user deferral with setup --defer-installation and do not ask again on every
+resume. Use --resume-installation only after the user's later authorization. While a tool is blocked,
+continue independent profile steps and label PDF/browser-dependent work pending.
+Do not invent site login state; request sign-in only for the actual selected site
+when needed. Choose conversation language from the user, not the example profile.
+
+If setup reports configuration_review_required for its saved state, preserve the
+file and ask for the recovery choice before downloads. Use recover-setup with the
+actual confirmed defer/resume choice; it archives the old bytes and installs
+nothing. Never treat an unreadable state as new, use --resume-installation to
+discard it, or confuse its operational schema with career-data migration.
 
 If existing data is schema 1, preserve it and read [data maintenance](data-maintenance.md).
 Create migrate-plan, explain the backup and format changes, and use the user's
