@@ -1,5 +1,5 @@
 {
-  "version": "0.1.11",
+  "version": "0.1.12",
   "files": {
     ".gitattributes": {
       "sha256": "c18a2d17cc6f71c9b5c0b3d45f87eb903e18e2f8afc517f2f6f4ad7f3880e10d",
@@ -22,15 +22,15 @@
       "bytes": 1086
     },
     "README.md": {
-      "sha256": "9464ebd81e733d98d21c5a66ae5049afd87dddda11b55aa7d40a29a9e4e385fb",
-      "bytes": 16803
+      "sha256": "3377ccffe5635f125bcadbd5052fe27d641d731ebae0da94f1da894dbc0dee1b",
+      "bytes": 17104
     },
     "START_HERE_CODEX.md": {
-      "sha256": "42fcb47e285b688b9accdc38aeca7ec3c560f5b74dfa29c7fe6bfe5d3779e87d",
+      "sha256": "0d008ab66152e40f231a810d8b3c35a5c42d7f3edcbd2e082754e86bd6133954",
       "bytes": 6566
     },
     "VERSION": {
-      "sha256": "66d60356172ccafdd334fca9bf33243c8409216a733dcde0d66a24fd70ee8132",
+      "sha256": "0a6c8dc4148eed841498d2c2be544947a62f8f50c381b2e64bcd7ce40461cf34",
       "bytes": 7
     },
     "install.py": {
@@ -38,11 +38,11 @@
       "bytes": 4065
     },
     "package-lock.json": {
-      "sha256": "96b4ace06a29862ccc5d5901018baf14fa9e6f8d3108cf60bc554e5884ffbcc2",
+      "sha256": "c96ed4fd4a42592c6e498ba840e36c5007a7174c04f0b6919f45b017a7e29e48",
       "bytes": 1248
     },
     "package.json": {
-      "sha256": "40d855cb7bf40b0f1df463944b37e130e952196a5c06aed7935f0c5859db9bcb",
+      "sha256": "372242e880c006288775c57f183fd34243d7a7114082db57dc1621bbb9b24104",
       "bytes": 328
     },
     "release.py": {
@@ -58,7 +58,7 @@
       "bytes": 2935
     },
     ".github/workflows/release.yml": {
-      "sha256": "acda009416c4e1e4494f8ad0b7f4314ad9389db11a626baab13f463bac78be0a",
+      "sha256": "59609593725dee4c73599731d5b5eae92cb83e45ae94e37e9cf9db8bb9711d19",
       "bytes": 1470
     },
     "docs/CODEX_SETUP.md": {
@@ -66,28 +66,28 @@
       "bytes": 4083
     },
     "docs/COLD_START.md": {
-      "sha256": "ef5541be1e7d3f1779f233f4c6e727db4e8d8e76c7bae3105559a0b0e577e582",
-      "bytes": 4916
+      "sha256": "22b22870571ceb32d8770cff0168dfe3f7dbd4db965167922adcc81bfb0dfa89",
+      "bytes": 5655
     },
     "docs/HOST_BROWSER_VALIDATION.md": {
       "sha256": "99fa25d251c6a710be75b1bfeeb066a9daf5b3f7d6fc2b55a8d34a54301dcbd9",
       "bytes": 3805
     },
     "docs/RELEASE_NOTES.md": {
-      "sha256": "2e380c06a7bab59c0fdad4381a09be02e8375a020c64e1482b0f220becbfd520",
-      "bytes": 5228
+      "sha256": "5fe44a029e99feabd0a34fe38cf20f2f42a6da8d5a7a08fbca5739b58660ac08",
+      "bytes": 6432
     },
     "docs/RELEASING.md": {
-      "sha256": "e46003c13b8ed458b74bf1179a5d565274c245cc1637bc6663c3ec3b5a32c0bf",
+      "sha256": "e668730104013f92a38869c6f4ec13638adb7fb849b65c2276613309eed443e0",
       "bytes": 3967
     },
     "docs/VALIDATION.md": {
-      "sha256": "3b8cbeb2aaa96edb5c215723da3e98be02c28ee698beb91d2fc93d9e06902693",
-      "bytes": 3934
+      "sha256": "a73c523ee87eefc1777c6d04231b06ad876ceec9f376634056c609fd422d17c5",
+      "bytes": 4527
     },
     "docs/VALIDATION_HISTORY.md": {
-      "sha256": "12a4f38242e78556c5464c5ed5d0296732ef9713fe55b8bc3cf0bd574673b09d",
-      "bytes": 45910
+      "sha256": "165a924b5d056583ac0116facb1506929792b6bc7466b13359cbbb0a43b71c9f",
+      "bytes": 49850
     },
     "examples/README.md": {
       "sha256": "3d482ccb3145d4c71e86c181b40e6e2d7359ceb14f96eff4af66b757e32d4624",
@@ -130,32 +130,32 @@
       "bytes": 3581
     },
     "skills/career-assistant/references/setup.md": {
-      "sha256": "05333643384d0ec24bdbb80123dc256c8da40db0540bdaf0e3a063ee8156e394",
-      "bytes": 8974
+      "sha256": "9f62848625d4f2c7a68fe5d744262b8d8ff15a82cb53a1348230d6df7f2fc681",
+      "bytes": 9853
     },
     "skills/career-assistant/references/workday-login.md": {
       "sha256": "3d800d6aaf3706046650723701a09a049bc36d6b8abfaa720f73418451cd1a59",
       "bytes": 3726
     },
     "skills/career-assistant/scripts/bootstrap-python.ps1": {
-      "sha256": "c46da839cbcc4522d187b7f8518fd9e189a34297f85e3ebfe857d621d13181ec",
-      "bytes": 9331
+      "sha256": "074149878cbb7c312b01d078e714bc44c13def6138fb6f9eca64586a0a05573e",
+      "bytes": 12373
     },
     "skills/career-assistant/scripts/bootstrap-python.sh": {
-      "sha256": "f8962ae014897a258f6fadefa2dbd9f7fce59175f556715a868f74faf26e6455",
-      "bytes": 5195
+      "sha256": "34aab6c64144be1045759f29a6b0913fc5b818e9b2d2062af748c6d84f16f545",
+      "bytes": 6095
     },
     "skills/career-assistant/scripts/capabilities.py": {
-      "sha256": "04e214d588c4b9d82e6d9197a9f3918f527564ecbf8b50cf1856c6163e92d7a2",
-      "bytes": 7074
+      "sha256": "6c105899045215969675048193d2c7262d1ba8df83ad6e000cbcd2a30af93a61",
+      "bytes": 7137
     },
     "skills/career-assistant/scripts/career.py": {
-      "sha256": "a2a99c7c679f007ee02a2e0864bd3ffade72b230665d6bd6065d737ea4e16f57",
-      "bytes": 9374
+      "sha256": "9a1e3240705a68cbbdccb28d7fe3a71f68a4adb51a6e2a0cadd364a16d911b6c",
+      "bytes": 9500
     },
     "skills/career-assistant/scripts/environment.py": {
-      "sha256": "712c36f90a2d4eceb2a6a0bb20270e7c1d2f0b2d5ba16365864ba87bd1f970c8",
-      "bytes": 44763
+      "sha256": "f64d89178f801510e4c32ee0b010db25323896164f7b6192e3671c6fe79b0eb4",
+      "bytes": 47380
     },
     "skills/career-assistant/scripts/jobs.py": {
       "sha256": "de9372541582a449b5029e7cd5663259202782bbd1fea26e869e23ddfcf34972",
@@ -182,7 +182,7 @@
       "bytes": 3906
     },
     "skills/career-assistant/scripts/storage.py": {
-      "sha256": "a6467c74757fedc0092fcd853c21809397581aaa63cafe79d02a05f3ed5de6b0",
+      "sha256": "661b6de5c9151d0335bdbbb9fc29a6c0ecb785880eab7a20a77aa94a247343dd",
       "bytes": 13064
     },
     "skills/career-assistant/SKILL.md": {
@@ -234,8 +234,8 @@
       "bytes": 8586
     },
     "tests/test_environment.py": {
-      "sha256": "d400e64324684475cba29d12fd7c5b85f90f35529441ca3398f7a2f3dda103a8",
-      "bytes": 35166
+      "sha256": "77740d61a383f0a0028a06b5d862276ee51a8dd5fde81f0b6ac22806a96656f8",
+      "bytes": 46546
     },
     "tests/test_host_browser_fixture.py": {
       "sha256": "0d0b9bb9e697c1ff974c3987f97e5824fdee906121d4c83564c6c159ed6dee28",

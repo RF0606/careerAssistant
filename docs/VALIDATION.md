@@ -1,66 +1,72 @@
-# v0.1.11 acceptance
+# v0.1.12 acceptance
 
-**Development preview.** This release protects saved installation choices and
-registers browser MCP configuration by TOML semantics. It also publishes the
-previously local environment/bootstrap and application-artifact repairs.
-Historical evidence remains in [VALIDATION_HISTORY.md](VALIDATION_HISTORY.md).
+**Development preview.** This version repairs the four reproduced first-use
+issues: Windows Chinese-path probing, ambiguous setup JSON, writes through linked
+setup directories and false readiness for a broken selected Python. Historical
+evidence is retained in [VALIDATION_HISTORY.md](VALIDATION_HISTORY.md).
 
 ## Fixed behavior
 
-- A missing setup-state file is distinct from one that is damaged, unreadable,
-  linked, structurally invalid or on an unsupported version. The latter stops
-  downloads, preserves the original and reports the required review/permission.
-  Ordinary resume flags cannot silently replace it.
-- recover-setup requires an explicit defer/resume choice and actual confirmation,
-  verifies a raw-byte backup before replacing operational metadata, installs no
-  software and resets no career facts, tools or application history. Recovery
-  checks the installer lock and concurrent edits. Core text/source-only work can
-  continue while PDF tooling remains pending.
-- Existing MCP servers are identified using a real TOML parser. Quoted, dotted and
-  inline equivalents remain unchanged; conflicting/invalid/unappendable config is
-  preserved. Every requested host and candidate document is checked before writes.
-  Linked host files cannot modify global/outside-workspace settings. Python 3.10
-  has a conditional local tomli dependency; parser worker results contain only
-  boolean metadata, never existing configuration contents.
-- Windows PowerShell 5 native-runtime handling reads uv stdout/stderr separately
-  and checks its exit code, so successful progress output is not a false failure.
-  It does not change shell execution policy, global PATH or registry settings.
+- Windows runtime probes use ASCII JSON, round-trip GBK/Unicode paths in both
+  Windows PowerShell 5 and PowerShell 7, and verify the returned executable before
+  reporting success or saving its pointer. Official uv SHA-256 uses .NET directly,
+  avoiding shell module-discovery differences. No global encoding/policy changes.
+- Duplicate JSON keys (including nested keys), boolean/float versions, invalid
+  numeric constants and incomplete/unknown steps require review before any
+  installer or state replacement. Original bytes remain intact. Explicit recovery
+  still backs up and hashes them before saving the actual defer/resume choice.
+- Setup checks every existing path component before mkdir/lock/state/backup writes,
+  even when environment.json is absent. Native bootstraps also reject linked or
+  invalid setup paths. Missing files never hide a junction/symlink in a parent.
+- Doctor probes the selected workspace Python, including a missing executable.
+  Failure clears inherited PDF-package readiness and supplies runtime_required;
+  execution denial remains approval_required. PDF import/render stay pending and
+  fail before package changes. Text/profile/source-only work remains usable.
 
-## Local acceptance
+## Local verification
 
-Windows Python 3.13.1: **167 source tests passed**, including 48 environment tests
-and the prior application/role/maintenance regressions. **21 fictional browser
-scenarios passed.** Coverage includes corrupt/missing-version/unreadable state,
-no install even with a generic resume flag, explicit raw-byte recovery, structured
-doctor/PDF errors, equivalent quoted/dotted/inline TOML, candidate validation,
-multi-host preflight and linked/global config preservation. Python 3.10 parser
-compatibility is included in the CI matrix with its conditional dependency.
+Windows Python 3.13.1: **177 Python tests passed**, including **58 environment
+tests** and the previous application-artifact, duplicate, role recovery and private
+maintenance regressions. **21 fictional Chromium browser scenarios passed.**
 
-A real fictional PDF passed one-page Letter, text extraction and actual PNG
-inspection. The canonical template hash remains
+A real Windows PowerShell 5 first-use run hid Python/Node/Tectonic from PATH and
+forced GBK output in a Chinese directory. It installed and verified private
+CPython, returned an exact runnable path, automatically prepared PDF wheels,
+Tectonic, Node, Chromium and both project MCP configs, and warmed an empty TeX
+cache. An offline repeat reused completed tools and preserved config bytes. A
+missing selected runtime was correctly reported, repaired by setup and rechecked.
+
+Three actual one-page Letter PDFs passed extraction and visual PNG review:
+Projects off by default, explicitly requested Projects below Work Experience,
+and R&D/C#/percent/underscore characters. The canonical template hash remains
 0fb02c175f5366a5f687fd65fd911f3b11ece8111cc273f000b25bf828591915.
-Final ZIP extraction, both host installations and the Python/browser suites are
-rechecked before publication; exact private run results remain local.
 
-Two actual Codex conversations verified that broken state remains unchanged
-until a user choice, then exact original bytes are backed up and continued
-deferral is saved without software installation. A Windows PowerShell 5 run
-also prepared only the private Python runtime after explicit authorization,
-left damaged state untouched until recover-setup, and restored deferral with an
-exact backup. These use isolated fictional workspaces, not real career data.
+Five fresh native Codex sessions started from a repository-external public copy
+with no profile or preinstalled project skill. Initialization, source-backed facts,
+restart recovery, both selected private role skills and personal-skill invocation
+passed disk assertions and transcript/source review. Facts were preserved across
+restarts, unknown requirements stayed unknown, source-only remained draft and no
+application or submission grant was created in these conversation checks.
 
-## Public release checks
+The actual Codex IAB (separate from headless tests) passed the loopback login,
+real-PDF upload, success receipt, uncertain-outcome duplicate guards and original
+receipt/hash reconciliation. Each fictional job had exactly one final POST and
+one tracker attempt. A genuinely reopened context required a new sign-in; existing
+receipts survived without another application click. Visible CAPTCHA stopped
+before filling. Test credentials stayed in memory/private fixture files; artifact
+scan passed. Created tabs and the loopback server were closed afterward.
 
-Public source, manifest and four handoff assets use the closed allowlist.
-Private setup state/tools, host settings, backups, browser data, generated personal
-skills and test evidence never ship. CI runs its five OS/Python combinations,
-browser mocks and verified bundle for master and again for the matching version
-tag. Publication stays a prerelease until the separate product acceptance gates
-are satisfied; actual run status is available in GitHub Actions.
+The final public ZIP is extracted, its manifest verified, both generic host copies
+installed and the Python/browser suites rerun before publication. Private logs,
+runtime tools, credentials, profiles, backups and generated personal skills never
+ship. Master and matching-tag CI repeat the five OS/Python combinations, browser
+suite and verified four-file release bundle; live results remain in GitHub Actions.
 
 ## Remaining acceptance
 
-Cloud helper tests do not replace a macOS desktop/model conversation, Claude Code
-conversation or authorized live-employer portal acceptance. Prior Windows PDF,
-native first-use, dependency installation and browser evidence is retained with
-its original version scope. No real credentials or employer application are used.
+Claude Code's first conversation was attempted but stopped on invalid host
+authentication before any workspace change; it is **unverified, not passed**.
+macOS desktop/model conversations and authorized live-employer portals were not
+tested. Cloud cross-platform helper tests and fictional mock submissions cannot
+replace them. Tool trust/reload, site login and real application authorization
+remain separate. The release therefore remains a development preview.

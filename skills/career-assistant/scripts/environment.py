@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 import platform
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -45,8 +46,49 @@ def root(workspace):
     return Path(workspace).resolve() / '.career-assistant'
 
 
+def _local_setup_path(workspace, path):
+    """Check every existing component, including when the final file is absent."""
+    base = Path(workspace).resolve()
+    path = Path(path).absolute()
+    try:
+        parts = path.relative_to(base).parts
+        if not parts or '..' in parts:
+            raise ValueError('Invalid local setup path')
+        current = base
+        for index, part in enumerate(parts):
+            current = current / part
+            try:
+                info = current.lstat()
+            except FileNotFoundError:
+                break
+            if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & 0x400:
+                raise ValueError('Linked setup path')
+            if index < len(parts) - 1 and not stat.S_ISDIR(info.st_mode):
+                raise ValueError('Non-directory setup parent')
+        return path
+    except PermissionError:
+        raise SetupError('approval_required', 'The local setup path cannot be inspected',
+                         'Allow access to this workspace path before continuing; no installation or state replacement is authorized by this failure.') from None
+    except (ValueError, OSError):
+        raise SetupError('configuration_review_required', 'The setup path is linked, outside the workspace or invalid',
+                         'Review the original path before setup or recovery. No state, lock or backup may be written through a linked directory.') from None
+
+
+def _unique_object(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError('Duplicate setup JSON key')
+        value[key] = item
+    return value
+
+
+def _invalid_constant(value):
+    raise ValueError('Non-JSON numeric constant')
+
+
 def settings(workspace):
-    path = root(workspace) / 'setup/environment.json'
+    path = _local_setup_path(workspace, root(workspace) / 'setup/environment.json')
     try:
         if not path.exists():
             return {}
@@ -54,12 +96,14 @@ def settings(workspace):
             raise ValueError('Non-regular setup state')
         if path.stat().st_size > 2_000_000:
             raise ValueError('Oversized setup state')
-        value = json.loads(path.read_text(encoding='utf-8-sig'))
-        if (not isinstance(value, dict) or value.get('schema_version') != 1
+        value = json.loads(path.read_text(encoding='utf-8-sig'), object_pairs_hook=_unique_object,
+                           parse_constant=_invalid_constant)
+        if (not isinstance(value, dict) or type(value.get('schema_version')) is not int or value['schema_version'] != 1
                 or value.get('kind', 'dependency_setup') != 'dependency_setup'
                 or value.get('installation_policy') not in ('auto', 'deferred')
                 or not isinstance(value.get('steps'), dict)
-                or any(not isinstance(step, dict) or ('status' in step and not isinstance(step['status'], str))
+                or set(value['steps']) - {'python_packages', 'tectonic', 'tex_cache', 'browser', 'search', 'login'}
+                or any(not isinstance(step, dict) or not isinstance(step.get('status'), str) or not step['status'].strip()
                        for step in value['steps'].values())):
             raise ValueError('Invalid setup state structure/version')
         return value
@@ -80,7 +124,7 @@ def local_python(workspace):
 def configured_python(workspace):
     chosen = settings(workspace).get('steps', {}).get('python_packages', {}).get('python_executable')
     for candidate in local_python(workspace):
-        if chosen == str(candidate) and candidate.is_file():
+        if chosen == str(candidate):
             return candidate
     return None
 
@@ -138,6 +182,11 @@ def probe_python(executable):
         return None
     except (ValueError, KeyError, OSError):
         return None
+
+
+def unavailable_runtime():
+    return SetupError('runtime_required', 'The saved workspace Python is missing, incompatible or cannot execute',
+                      'Rerun setup with a working Python 3.10+ to verify or repair the selected runtime. Keep PDF import/render pending; text/profile/source-only work remains available. Do not replace files or bypass an execution denial.')
 
 
 def _fetch(url, max_bytes=300_000_000):
@@ -573,7 +622,7 @@ def recover_setup(workspace, choice, confirmation):
         else:
             return {'status': 'not_required', 'state_saved': False,
                     'next_action': 'The saved state is valid or absent. Use normal setup --defer-installation/--resume-installation; no state was reset.'}
-        lock = path.parent/'.install.lock'
+        lock = _local_setup_path(workspace, path.parent/'.install.lock')
         try:
             fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         except FileExistsError:
@@ -586,7 +635,7 @@ def recover_setup(workspace, choice, confirmation):
                                  'Preserve the original and review its path/size; it was not replaced.')
             original = path.read_bytes()
             key = hashlib.sha256(original).hexdigest()
-            backup = path.parent/'state-backups'/('environment-'+uuid.uuid4().hex+'.bin')
+            backup = _local_setup_path(workspace, path.parent/'state-backups'/('environment-'+uuid.uuid4().hex+'.bin'))
             atomic_bytes(backup, original)
             if hashlib.sha256(backup.read_bytes()).hexdigest() != key:
                 raise SetupError('verification_failed', 'Setup state backup did not verify', 'The original state was not replaced.')
@@ -598,7 +647,7 @@ def recover_setup(workspace, choice, confirmation):
                         'steps': {}, 'status': 'recovered', 'updated_at': now(),
                         'recovered_from': str(backup.relative_to(root(workspace))), 'original_sha256': key,
                         'confirmation_sha256': hashlib.sha256(confirmation.encode('utf-8')).hexdigest()}
-            atomic(path, restored)
+            atomic(_local_setup_path(workspace, path), restored)
             settings(workspace)
             return {'status': 'recovered', 'state_saved': True, 'installation_policy': restored['installation_policy'],
                     'backup_path': str(backup), 'original_sha256': key, 'installed_software': False,
@@ -620,8 +669,8 @@ def setup(workspace, host='codex', browser='inspect', search='inspect', download
     try:
         # Invalid/unreadable existing state is not equivalent to a first run.
         settings(workspace)
-        state_path.parent.mkdir(parents=True, exist_ok=True)
-        lock = state_path.parent/'.install.lock'
+        _local_setup_path(workspace, state_path).parent.mkdir(parents=True, exist_ok=True)
+        lock = _local_setup_path(workspace, state_path.parent/'.install.lock')
         try:
             fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         except FileExistsError:
@@ -646,7 +695,7 @@ def setup(workspace, host='codex', browser='inspect', search='inspect', download
                 previous = state['steps'].get(name, {})
                 state['steps'][name] = {**({'cache_scope': previous['cache_scope']} if 'cache_scope' in previous else {}), **value}
                 state['updated_at'] = now()
-                atomic(state_path, state)
+                atomic(_local_setup_path(workspace, state_path), state)
             ignore = workspace/'.gitignore'
             existing = ignore.read_text(encoding='utf-8') if ignore.exists() else ''
             missing = [rule for rule in ['/.career-assistant/', '/.venv/'] if rule not in existing.splitlines()]
@@ -693,7 +742,7 @@ def setup(workspace, host='codex', browser='inspect', search='inspect', download
             state['next_action'] = 'Use the returned Python for helpers. Continue saved onboarding; request only actual pending permission, host connection or sign-in actions.'
             if state['installation_policy'] == 'deferred':
                 state['next_action'] = 'Installation was deferred by the user. Continue independent profile work without asking again or downloading. After the user authorizes installation, resume with --resume-installation; host/OS permission is still required.'
-            atomic(state_path,state)
+            atomic(_local_setup_path(workspace, state_path),state)
         finally:
             lock.unlink(missing_ok=True)
     except PermissionError:

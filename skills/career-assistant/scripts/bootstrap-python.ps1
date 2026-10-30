@@ -15,6 +15,35 @@ function Write-SetupJson([object]$Value) {
     $ascii = [System.Text.RegularExpressions.Regex]::Replace($json, '[^\x00-\x7F]', [System.Text.RegularExpressions.MatchEvaluator]{ param($match) '\u' + ([int][char]$match.Value).ToString('x4') })
     Write-Output $ascii
 }
+function Assert-LocalBootstrapPath([string]$RelativePath, [bool]$Directory = $false) {
+    $prefix = $workspaceRoot.TrimEnd('\') + '\'
+    $target = [System.IO.Path]::GetFullPath((Join-Path $workspaceRoot $RelativePath))
+    if (-not $target.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) { throw [System.IO.InvalidDataException]::new('Path escapes workspace') }
+    $parts = $target.Substring($prefix.Length).Split('\')
+    $current = $workspaceRoot
+    for ($i = 0; $i -lt $parts.Length; $i++) {
+        $current = Join-Path $current $parts[$i]
+        try { $attributes = [System.IO.File]::GetAttributes($current) }
+        catch [System.IO.FileNotFoundException] { break }
+        catch [System.IO.DirectoryNotFoundException] { break }
+        if (($attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) { throw [System.IO.InvalidDataException]::new('Linked bootstrap path') }
+        $isDirectory = ($attributes -band [System.IO.FileAttributes]::Directory) -ne 0
+        if (($i -lt $parts.Length - 1 -or $Directory) -and -not $isDirectory) { throw [System.IO.InvalidDataException]::new('Invalid bootstrap directory') }
+        if ($i -eq $parts.Length - 1 -and -not $Directory -and $isDirectory) { throw [System.IO.InvalidDataException]::new('Invalid bootstrap file') }
+    }
+}
+try {
+    Assert-LocalBootstrapPath '.career-assistant\setup\environment.json'
+    Assert-LocalBootstrapPath '.career-assistant\setup\python-executable.txt'
+    Assert-LocalBootstrapPath '.career-assistant\tools\uv\uv.exe'
+    Assert-LocalBootstrapPath '.career-assistant\tools\python' $true
+} catch [System.UnauthorizedAccessException] {
+    Write-SetupJson @{status='approval_required';next_action='Allow inspection of the workspace setup path before continuing; no installation was attempted.'}
+    exit 2
+} catch {
+    Write-SetupJson @{status='configuration_review_required';next_action='Review linked or invalid setup paths. No runtime, state or lock was written through them.'}
+    exit 2
+}
 function Invoke-PrivateUv([string]$Executable, [string]$Arguments, [string]$InstallDir, [string]$CacheDir) {
     # Windows PowerShell 5 treats native stderr progress as an error record.
     # Read both streams directly and use the native exit code, without policy changes.
@@ -42,8 +71,14 @@ function Invoke-PrivateUv([string]$Executable, [string]$Arguments, [string]$Inst
 function Probe-Python([string]$Executable, [string[]]$Prefix = @()) {
     if (-not $Executable) { return $null }
     try {
-        $value = & $Executable @Prefix -c 'import sys; assert sys.version_info >= (3,10); print(sys.executable)' 2>$null
-        if ($LASTEXITCODE -eq 0 -and $value) { return ([string]($value | Select-Object -Last 1)).Trim() }
+        # ASCII JSON survives GBK/UTF-8 pipe decoding in both Windows shells.
+        $value = & $Executable @Prefix -c 'import json,sys; assert sys.version_info >= (3,10); print(json.dumps(sys.executable,ensure_ascii=True))' 2>$null
+        if ($LASTEXITCODE -eq 0 -and $value) {
+            $decoded = ([string]($value | Select-Object -Last 1)) | ConvertFrom-Json
+            if ($decoded -is [string] -and [System.IO.Path]::IsPathRooted($decoded) -and [System.IO.File]::Exists($decoded)) {
+                return [System.IO.Path]::GetFullPath($decoded)
+            }
+        }
     } catch {
         if ($_.CategoryInfo.Category -eq 'PermissionDenied' -or $_.Exception -is [System.UnauthorizedAccessException]) { return '__CAREER_PERMISSION_DENIED__' }
     }
@@ -101,8 +136,10 @@ if (Test-Path -LiteralPath $policyPath) {
         Write-SetupJson @{status='installation_deferred';next_action='The user deferred installation. Do not download or ask again; resume only after explicit user authorization.'}
         exit 2
     }
-    if (-not $ResumeInstallation -and ($policy.schema_version -ne 1 -or $policy.installation_policy -notin @('auto','deferred') -or $policy.steps -isnot [pscustomobject])) {
-        Write-SetupJson @{status='configuration_review_required';next_action='Review or recover the saved installer state before downloading a runtime. Existing choices were preserved.'}
+    if (-not $ResumeInstallation) {
+        # ConvertFrom-Json cannot establish uniqueness of keys. Leave full consent
+        # validation to the Python helper instead of guessing from an ambiguous file.
+        Write-SetupJson @{status='configuration_review_required';next_action='Without a working Python the saved JSON cannot be fully validated. Preserve it and explicitly authorize runtime-only bootstrap before downloading; then review/recover its installation choice with the helper.'}
         exit 2
     }
 }
@@ -122,7 +159,11 @@ try {
         if ($assets.Count -ne 1 -or $assets[0].digest -notmatch '^sha256:[0-9a-f]{64}$') { throw 'Verified official uv asset unavailable' }
         $archivePath = Join-Path $setupPath 'uv-download.zip'
         Invoke-WebRequest -Uri $assets[0].browser_download_url -OutFile $archivePath -UseBasicParsing -TimeoutSec 180
-        if ((Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $assets[0].digest.Substring(7)) { throw 'Official uv asset hash mismatch' }
+        $hasher = [System.Security.Cryptography.SHA256]::Create()
+        $hashInput = [System.IO.File]::OpenRead($archivePath)
+        try { $actualHash = ([System.BitConverter]::ToString($hasher.ComputeHash($hashInput))).Replace('-','').ToLowerInvariant() }
+        finally { $hashInput.Dispose(); $hasher.Dispose() }
+        if ($actualHash -ne $assets[0].digest.Substring(7)) { throw 'Official uv asset hash mismatch' }
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         $archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
         try {
@@ -142,6 +183,8 @@ try {
     $selected = $found.Output.Trim()
     $selected = Probe-Python ([string]$selected).Trim()
     if (-not $selected) { throw 'Installed Python could not be verified' }
+    $runtimePrefix = [System.IO.Path]::GetFullPath($runtimePath).TrimEnd('\') + '\'
+    if (-not $selected.StartsWith($runtimePrefix, [System.StringComparison]::OrdinalIgnoreCase) -or -not [System.IO.File]::Exists($selected)) { throw 'Installed Python path is not a verified private runtime' }
     [System.IO.File]::WriteAllText((Join-Path $setupPath 'python-executable.txt'), $selected)
     Write-SetupJson @{status='installed';python_executable=$selected;installed=$true;scope='workspace only; no PATH, registry or host policy changes'}
 } catch [System.UnauthorizedAccessException] {

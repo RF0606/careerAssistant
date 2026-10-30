@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import venv
 from unittest.mock import patch
 from zipfile import ZipFile
 from fixtures import make_workspace,assessment,draft
@@ -276,7 +277,7 @@ class EnvironmentTests(unittest.TestCase):
 
     def test_runtime_selection_never_executes_an_arbitrary_saved_path(self):
         path=env.root(self.workspace)/'setup/environment.json'
-        atomic(path,{'schema_version':1,'installation_policy':'auto','steps':{'python_packages':{'python_executable':str(self.workspace.parent/'untrusted.exe')}}})
+        atomic(path,{'schema_version':1,'installation_policy':'auto','steps':{'python_packages':{'status':'available','python_executable':str(self.workspace.parent/'untrusted.exe')}}})
         self.assertIsNone(env.configured_python(self.workspace))
 
     def test_operational_setup_state_cannot_be_mistaken_for_old_career_schema(self):
@@ -484,6 +485,146 @@ class EnvironmentTests(unittest.TestCase):
         else:link.symlink_to(other,target_is_directory=True)
         with self.assertRaises(env.SetupError):env._register_browser(self.workspace,'codex',{'command':'fixture','args':[],'env':{}})
         self.assertEqual(before,outside.read_bytes())
+
+    def test_ambiguous_state_stops_before_every_installer_and_preserves_raw_bytes(self):
+        invalid=[b'{"schema_version":1,"installation_policy":"deferred","steps":{},"installation_policy":"auto"}',
+                 b'{"schema_version":true,"installation_policy":"auto","steps":{}}',
+                 b'{"schema_version":1.0,"installation_policy":"auto","steps":{}}',
+                 b'{"schema_version":1,"installation_policy":"auto","steps":{"interrupted-step":{}}}',
+                 b'{"schema_version":1,"installation_policy":"auto","steps":{"browser":{}}}',
+                 b'{"schema_version":1,"installation_policy":"auto","steps":{"browser":{"status":""}}}',
+                 b'{"schema_version":1,"installation_policy":"auto","steps":{"browser":{"status":"deferred","status":"available"}}}',
+                 b'{"schema_version":1,"installation_policy":"auto","steps":{},"extra":NaN}']
+        for index,original in enumerate(invalid):
+            with self.subTest(index=index):
+                workspace=self.workspace/str(index);state=env.root(workspace)/'setup/environment.json'
+                state.parent.mkdir(parents=True);state.write_bytes(original)
+                with patch.object(env,'_install_packages') as packages,patch.object(env,'_install_tectonic') as compiler,patch.object(env,'_install_browser') as browser,patch.object(env,'_fetch') as download:
+                    result=env.setup(workspace,browser='missing',search='missing',resume=True)
+                self.assertEqual('configuration_review_required',result['status'])
+                self.assertFalse(result['state_saved']);self.assertEqual(original,state.read_bytes())
+                self.assertFalse((workspace/'.gitignore').exists())
+                self.assertEqual(['environment.json'],sorted(p.name for p in state.parent.iterdir()))
+                for installer in [packages,compiler,browser,download]:installer.assert_not_called()
+
+    def test_ambiguous_state_needs_explicit_recovery_and_keeps_exact_original(self):
+        original=b'{"schema_version":1,"installation_policy":"deferred","steps":{},"installation_policy":"auto"}'
+        state=env.root(self.workspace)/'setup/environment.json';state.parent.mkdir(parents=True);state.write_bytes(original)
+        result=env.recover_setup(self.workspace,'defer','Fictional user explicitly chooses continued deferral')
+        self.assertEqual('recovered',result['status']);self.assertEqual(original,Path(result['backup_path']).read_bytes())
+        self.assertEqual('deferred',env.settings(self.workspace)['installation_policy'])
+
+    def link_directory(self, target, link):
+        link.parent.mkdir(parents=True,exist_ok=True)
+        if os.name=='nt':
+            import _winapi
+            _winapi.CreateJunction(str(target),str(link))
+        else:link.symlink_to(target,target_is_directory=True)
+
+    def test_absent_state_under_linked_parents_never_writes_a_lock_or_state_outside(self):
+        for index,relative in enumerate(['.career-assistant','.career-assistant/setup']):
+            with self.subTest(relative=relative):
+                workspace=self.workspace/str(index);workspace.mkdir()
+                outside=Path(self.temp.name)/('outside-'+str(index));outside.mkdir()
+                self.link_directory(outside,workspace/relative)
+                with patch.object(env,'_install_packages') as install,patch.object(env,'_fetch') as download:
+                    result=env.setup(workspace,browser='missing')
+                self.assertEqual('configuration_review_required',result['status']);self.assertFalse(result['state_saved'])
+                self.assertEqual([],list(outside.iterdir()));self.assertFalse((workspace/'.gitignore').exists())
+                install.assert_not_called();download.assert_not_called()
+
+    def test_recovery_never_writes_through_linked_backup_directory(self):
+        path=env.root(self.workspace)/'setup/environment.json';path.parent.mkdir(parents=True);path.write_bytes(b'{broken')
+        outside=Path(self.temp.name)/'outside-backups';outside.mkdir()
+        self.link_directory(outside,path.parent/'state-backups')
+        result=env.recover_setup(self.workspace,'defer','Fictional recovery request')
+        self.assertEqual('configuration_review_required',result['status']);self.assertFalse(result['state_saved'])
+        self.assertEqual(b'{broken',path.read_bytes());self.assertEqual([],list(outside.iterdir()))
+        self.assertFalse((path.parent/'.install.lock').exists())
+
+    def native_command(self,workspace):
+        scripts=PROJECT/'skills/career-assistant/scripts'
+        if os.name=='nt':return [shutil.which('powershell') or shutil.which('pwsh'),'-NoProfile','-File',str(scripts/'bootstrap-python.ps1'),'-Workspace',str(workspace),'-ManagedPython']
+        return [shutil.which('sh'),str(scripts/'bootstrap-python.sh'),str(workspace),'','--managed']
+
+    def test_native_runtime_bootstrap_rejects_linked_setup_before_writing(self):
+        outside=Path(self.temp.name)/'outside-native';outside.mkdir()
+        self.link_directory(outside,env.root(self.workspace)/'setup')
+        result=subprocess.run(self.native_command(self.workspace),capture_output=True,text=True,encoding='utf-8',timeout=30)
+        self.assertEqual(2,result.returncode,result.stderr)
+        self.assertEqual('configuration_review_required',json.loads(result.stdout)['status'])
+        self.assertEqual([],list(outside.iterdir()));self.assertFalse((env.root(self.workspace)/'tools').exists())
+
+    def test_native_runtime_bootstrap_never_infers_consent_from_ambiguous_existing_json(self):
+        path=env.root(self.workspace)/'setup/environment.json';path.parent.mkdir(parents=True)
+        raw=b'{"schema_version":1,"installation_policy":"deferred","steps":{},"installation_policy":"auto"}'
+        path.write_bytes(raw)
+        result=subprocess.run(self.native_command(self.workspace),capture_output=True,text=True,encoding='utf-8',timeout=30)
+        self.assertEqual(2,result.returncode,result.stderr)
+        self.assertIn(json.loads(result.stdout)['status'],['configuration_review_required','installation_deferred'])
+        self.assertEqual(raw,path.read_bytes());self.assertFalse((env.root(self.workspace)/'tools').exists())
+
+    @unittest.skipUnless(os.name=='nt','Actual Windows shell and GBK pipe behavior')
+    def test_native_python_probe_round_trips_chinese_paths_with_gbk_in_both_shells(self):
+        workspace=self.workspace/"中文 空格'验收";workspace.mkdir()
+        venv.EnvBuilder(with_pip=False).create(workspace/'.venv')
+        python=workspace/'.venv/Scripts/python.exe'
+        environment=dict(os.environ,PYTHONIOENCODING='gbk',PYTHONUTF8='0')
+        script=PROJECT/'skills/career-assistant/scripts/bootstrap-python.ps1'
+        shells=list(dict.fromkeys(shutil.which(name) for name in ['powershell','pwsh'] if shutil.which(name)))
+        self.assertTrue(shells)
+        for shell in shells:
+            with self.subTest(shell=shell):
+                result=subprocess.run([shell,'-NoProfile','-File',str(script),'-Workspace',str(workspace),'-Python',str(python),'-CheckOnly'],env=environment,capture_output=True,text=True,encoding='ascii',timeout=40)
+                self.assertEqual(0,result.returncode,result.stderr)
+                data=json.loads(result.stdout)
+                self.assertEqual('available',data['status']);self.assertEqual(str(python),data['python_executable'])
+                self.assertTrue(Path(data['python_executable']).is_file())
+                initialized=subprocess.run([data['python_executable'],str(script.with_name('career.py')),'--workspace',str(workspace),'init'],env=environment,capture_output=True,text=True,encoding='utf-8',timeout=30)
+                self.assertEqual(0,initialized.returncode,initialized.stderr)
+        self.assertFalse((env.root(workspace)/'tools').exists())
+
+    def selected_python_state(self,workspace,create=True):
+        selected=next(env.local_python(workspace))
+        if create:
+            selected.parent.mkdir(parents=True);selected.write_bytes(b'FICTIONAL INVALID EXECUTABLE');selected.chmod(0o755)
+        atomic(env.root(workspace)/'setup/environment.json',{'schema_version':1,'installation_policy':'auto','steps':{'python_packages':{'status':'available','python_executable':str(selected)}}})
+        return selected
+
+    def test_doctor_does_not_use_parent_packages_when_selected_runtime_is_broken_or_missing(self):
+        for create in [True,False]:
+            with self.subTest(create=create):
+                workspace=self.workspace/str(create);workspace.mkdir()
+                selected=self.selected_python_state(workspace,create)
+                self.assertEqual(selected,env.configured_python(workspace))
+                with patch.object(capabilities.importlib,'import_module',return_value=object()),patch.object(capabilities,'tool_path',return_value='fictional-compiler'),patch.object(capabilities,'pdf_smoke',side_effect=AssertionError('Must not compile with an invalid selected runtime')):
+                    result=capabilities.report(workspace,check_pdf=True)
+                self.assertEqual('runtime_required',result['setup']['status'])
+                self.assertFalse(any(result['packages'].values()))
+                self.assertFalse(result['features']['pdf_generation_and_qa']);self.assertFalse(result['features']['pdf_import'])
+                self.assertTrue(result['features']['profile_text_docx_and_scoring'])
+                self.assertIn('setup',result['next_actions'][0]['next_action'])
+
+    def test_pdf_cli_blocks_broken_selected_runtime_before_package_changes_but_source_work_continues(self):
+        person=make_workspace(self.workspace/'person');jobs.assess(person,assessment(person))
+        self.selected_python_state(person.workspace)
+        payload=person.root/'draft-input.json';atomic(payload,draft(person))
+        before=(person.root/'profile.json').read_bytes()
+        command=[sys.executable,str(PROJECT/'skills/career-assistant/scripts/career.py'),'--workspace',str(person.workspace),'render','demo-job','--input',str(payload)]
+        result=subprocess.run(command,capture_output=True,text=True,encoding='utf-8',timeout=30)
+        self.assertEqual(1,result.returncode);self.assertEqual('runtime_required',json.loads(result.stderr)['status'])
+        self.assertFalse((person.root/'packages/demo-job').exists());self.assertEqual(before,(person.root/'profile.json').read_bytes())
+        result=subprocess.run([*command,'--source-only'],capture_output=True,text=True,encoding='utf-8',timeout=30)
+        self.assertEqual(0,result.returncode,result.stderr)
+        self.assertEqual('draft',json.loads(result.stdout)['status'])
+
+    def test_selected_runtime_execution_denial_remains_a_permission_request(self):
+        selected=self.selected_python_state(self.workspace)
+        denial=env.SetupError('approval_required','Fictional denied runtime','Allow this exact runtime, then retry setup')
+        with patch.object(capabilities,'probe_python',side_effect=denial),patch.object(capabilities.importlib,'import_module',return_value=object()):
+            result=capabilities.report(self.workspace)
+        self.assertEqual('approval_required',result['setup']['status'])
+        self.assertFalse(any(result['packages'].values()));self.assertFalse(result['features']['pdf_import'])
 
 
 if __name__=='__main__':unittest.main()

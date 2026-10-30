@@ -5,6 +5,18 @@ workspace=${1:-.}
 provided=${2:-}
 mode=${3:-}
 workspace=$(cd "$workspace" && pwd -P)
+for path in "$workspace/.career-assistant" "$workspace/.career-assistant/setup" "$workspace/.career-assistant/tools" "$workspace/.career-assistant/tools/uv" "$workspace/.career-assistant/tools/python"; do
+    if [ -L "$path" ] || { [ -e "$path" ] && [ ! -d "$path" ]; }; then
+        printf '%s\n' '{"status":"configuration_review_required","next_action":"Review linked or invalid setup directories before continuing. No runtime, state or lock was written through them."}'
+        exit 2
+    fi
+done
+for path in "$workspace/.career-assistant/setup/environment.json" "$workspace/.career-assistant/setup/python-executable.txt"; do
+    if [ -L "$path" ] || { [ -e "$path" ] && [ ! -f "$path" ]; }; then
+        printf '%s\n' '{"status":"configuration_review_required","next_action":"Review linked or non-file setup state before continuing. The original path was preserved."}'
+        exit 2
+    fi
+done
 selected=''
 probe() {
     [ -n "$1" ] || return 1

@@ -13,6 +13,18 @@ the user before resuming. No system Python, registry or PATH changes are made. H
 reject Python 3.8/3.9 specifically before writing career data or installing skills.
 Do not claim saved progress until a helper actually succeeds.
 
+Windows probes exchange interpreter paths as ASCII JSON, so a Chinese directory
+also works when Python uses GBK stdout. The final absolute executable is checked
+before success and before saving the runtime pointer. No console/global encoding
+or shell policy change is needed.
+
+Setup validates its full directory chain before creating state or locks, even
+when environment.json is absent. Linked directories and ambiguous JSON (duplicate
+keys, incorrect version types or incomplete/unknown steps) require review without
+downloads or replacement. A missing/broken selected Python makes doctor report
+runtime_required and leaves PDF import/render pending; rerun setup using a working
+Python. Text/profile/source-only steps remain available.
+
 | Missing capability | Available now | Next action |
 | --- | --- | --- |
 | pypdf | Text/Markdown/DOCX, conversational facts, scoring | Setup installs the local official wheel when permitted |

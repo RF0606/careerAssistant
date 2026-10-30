@@ -10,7 +10,7 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
-from environment import tool_path, tool_env, configured_python, probe_python, settings, SetupError
+from environment import tool_path, tool_env, configured_python, probe_python, settings, SetupError, unavailable_runtime
 
 
 def write_probe(directory):
@@ -64,20 +64,22 @@ def report(workspace, host='codex', probe_writes=False, check_pdf=False):
             packages[name] = False
             package_errors[name] = type(exc).__name__
     selected = configured_python(workspace) if setup_problem is None else None
-    if selected and Path(sys.prefix).absolute() != selected.parent.parent.absolute():
+    if selected:
         try:
             verified = probe_python(selected)
         except SetupError as exc:
             verified = None
             setup_problem = exc.result
-            packages = {'pypdf': False, 'fitz': False}
-            package_errors = {'runtime': 'PermissionDenied; allow this selected workspace runtime before continuing'}
         if verified:
             packages = verified['packages']
             package_errors = {name: 'ImportError' for name, present in packages.items() if not present}
+        else:
+            setup_problem = setup_problem or unavailable_runtime().result
+            packages = {'pypdf': False, 'fitz': False}
+            package_errors = {'runtime': setup_problem['reason']}
     local_python = workspace / '.venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
     actions = []
-    if not all(packages.values()):
+    if not all(packages.values()) and setup_problem is None:
         commands = [] if local_python.is_file() else [[sys.executable, '-m', 'venv', str(workspace / '.venv')]]
         commands.append([str(local_python), '-m', 'pip', 'install', 'pypdf>=5,<7', 'PyMuPDF>=1.25,<2'])
         actions.append({'feature': 'pdf', 'next_action': 'Use a workspace .venv for PDF packages; reuse a compatible existing environment. Invoke its Python directly; shell activation and administrator access are unnecessary.', 'commands': commands})
@@ -102,6 +104,7 @@ def report(workspace, host='codex', probe_writes=False, check_pdf=False):
         result['pdf_cache_probe'] = ({'status': 'blocked', **setup_problem} if setup_problem else pdf_smoke(workspace, tools['tectonic']))
     if setup_problem:
         result['setup'] = {**setup_problem, 'state_saved': False}
+        result['features']['pdf_import'] = False
         result['features']['pdf_generation_and_qa'] = False
         result['next_actions'].insert(0, {'feature': 'setup', **setup_problem})
     elif saved:

@@ -1,3 +1,25 @@
+# Career Assistant v0.1.12 — Reliable native setup and accurate dependency checks
+
+Windows interpreter probes exchange ASCII JSON and verify the final executable,
+preserving Chinese paths even with GBK output. Native uv verification uses .NET
+SHA-256 directly and does not depend on shell module discovery.
+
+Setup rejects duplicate JSON keys, non-integer versions and incomplete/unknown
+steps before installation or replacement. It validates every existing directory
+component before creating state, locks or recovery backups, including when the
+final file does not exist. Explicit recovery still preserves exact original bytes.
+
+Doctor probes the saved local runtime instead of borrowing the parent Python's
+package readiness. A missing/broken runtime leaves PDF import/render pending with
+an actionable setup recovery message; text/profile/source-only work can continue.
+
+Regression coverage includes actual Windows shells with GBK and Chinese paths,
+linked directory preservation, ambiguous consent and broken selected runtimes.
+This remains a development preview; current evidence and platform/site limits are
+recorded in docs/VALIDATION.md. No user data, credentials or runtime state ships.
+
+---
+
 # Career Assistant v0.1.11 — Saved consent and MCP configuration repairs
 
 Damaged or unreadable installer state no longer becomes a fresh automatic install.

@@ -1,6 +1,6 @@
 {
   "name": "career-assistant-local-tools",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "description": "Optional local browser smoke tests and Workday credential fill helper",
   "license": "MIT",

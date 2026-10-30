@@ -21,6 +21,8 @@ know commands or edit JSON. Briefly explain the environment preparation, then ac
    POSIX uses Astral's HTTPS installer in unmanaged mode. No sudo, system Python
    replacement, Windows registry registration, PATH/profile edits or execution
    policy bypass is used. The returned Python is verified before use.
+   Windows probes use ASCII JSON for paths, including under GBK output. Reuse the
+   returned absolute executable; a successful result verifies that file exists.
 4. A denied bootstrap/command requires user permission; do not work around a host
    denial with another executable, shell or write tool. If no runtime can run,
    discuss materials but do not claim saved career initialization.
@@ -101,6 +103,15 @@ fresh operational metadata; it installs nothing and resets no career facts/tools
 Then resume normal setup. A generic --resume-installation cannot silently repair
 a broken state. If no Python can run, a separately authorized native bootstrap
 may install only that runtime, leaving the old state untouched for this recovery.
+The native bootstraps conservatively require this explicit runtime-only choice
+when existing JSON cannot be fully validated without Python; they never infer
+automatic installation from a last duplicate key. Duplicate keys, non-integer
+versions and incomplete/unknown steps are rejected by the helper before writes.
+Every existing setup-path component is checked even if the state file is absent;
+linked directories cannot redirect state, locks or recovery backups elsewhere.
+If doctor reports runtime_required for a missing/broken selected Python, rerun
+setup with a working runtime before PDF import/render. Parent Python packages do
+not make the failed selected runtime ready. Keep independent profile work moving.
 
 ## Actual permission and connection requests
 

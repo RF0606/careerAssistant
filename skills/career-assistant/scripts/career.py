@@ -57,9 +57,11 @@ def main(argv=None):
         from environment import recover_setup
         return recover_setup(args.workspace, args.choice, args.confirmation)
     if command == 'render' and not args.source_only or command == 'import-source' and args.path.suffix.lower() == '.pdf':
-        from environment import configured_python
+        from environment import configured_python, probe_python, unavailable_runtime
         selected = configured_python(args.workspace)
         if selected and Path(sys.prefix).absolute() != selected.parent.parent.absolute():
+            if probe_python(selected) is None:
+                raise unavailable_runtime()
             result = subprocess.run([str(selected), str(Path(__file__).resolve()), *(argv if argv is not None else sys.argv[1:])], capture_output=True, text=True, encoding='utf-8', errors='replace')
             if result.returncode:
                 try: detail = json.loads(result.stderr)['error']
