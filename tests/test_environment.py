@@ -34,6 +34,11 @@ class EnvironmentTests(unittest.TestCase):
             source=Path(args[-1]); source.with_suffix('.pdf').write_bytes(b'UNIT TEST PROBE; NOT REAL PDF QA')
         return subprocess.CompletedProcess(args,0,'tectonic test','')
 
+    def venv_info(self, executable, installed):
+        folder=Path(executable).parent.parent
+        return {**self.good,'prefix':str(folder),'install_paths':{k:str(folder) for k in ['purelib','platlib','scripts','data']},
+                'packages':{'pypdf':installed,'fitz':installed}}
+
     def ready(self,**kwargs):
         with patch.object(env,'probe_python',return_value=self.good), patch.object(env,'tool_path',return_value='fictional-tectonic'), patch.object(env,'_command',side_effect=self.fake_command), patch.object(env,'_fetch',side_effect=AssertionError('Unexpected download')):
             return env.setup(self.workspace,browser='existing',search='existing',**kwargs)
@@ -136,7 +141,7 @@ class EnvironmentTests(unittest.TestCase):
     def test_missing_pdf_packages_use_a_local_venv_and_official_binary_wheels(self):
         selected=list(env.local_python(self.workspace))[0];installed=False;commands=[]
         def probe(exe):
-            return {**self.good,'packages':{'pypdf':installed,'fitz':installed}}
+            return self.venv_info(exe,installed)
         def create(folder):
             selected.parent.mkdir(parents=True,exist_ok=True);selected.write_text('Fixture interpreter marker')
         def command(args,**kwargs):
@@ -163,7 +168,7 @@ class EnvironmentTests(unittest.TestCase):
     def test_interrupted_venv_with_missing_pip_is_repaired_before_install(self):
         selected=next(env.local_python(self.workspace));selected.parent.mkdir(parents=True);selected.write_text('Fixture interpreter')
         installed=False;calls=[]
-        def probe(executable):return {**self.good,'packages':{'pypdf':installed,'fitz':installed}}
+        def probe(executable):return self.venv_info(executable,installed)
         def command(args,**kwargs):
             nonlocal installed
             args=list(map(str,args));calls.append(args)
@@ -261,9 +266,11 @@ class EnvironmentTests(unittest.TestCase):
         module=directory/'@playwright/mcp';module.mkdir(parents=True)
         (module/'package.json').write_text('{"bin":{"playwright-mcp":"cli.js"}}')
         library=directory/'playwright';library.mkdir();(library/'cli.js').write_text('Fixture only')
+        (library/'package.json').write_text('{"engines":{"node":">=20"}}')
         failure=env.SetupError('system_dependencies_required','Missing OS libraries','Check current system install permission')
         for commands in [[failure],[env.SetupError('retryable_error','Engine missing','Download it'),subprocess.CompletedProcess([],0,'',''),failure]]:
-            with self.subTest(commands=len(commands)),patch.object(env,'_node',return_value=('fixture-node','fixture-npm')),patch.object(env,'_command',side_effect=commands),patch.object(env,'_register_browser') as register:
+            preflight=[subprocess.CompletedProcess([],0,'v22.1.0',''),subprocess.CompletedProcess([],0,'0.0.83','')]
+            with self.subTest(commands=len(commands)),patch.object(env,'_node',return_value=('fixture-node','fixture-npm')),patch.object(env,'_command',side_effect=preflight+commands),patch.object(env,'_register_browser') as register:
                 with self.assertRaises(env.SetupError) as caught:env._install_browser(self.workspace,'codex',True)
             self.assertEqual(['fixture-node',str(library/'cli.js'),'install-deps','chromium'],caught.exception.result['system_dependency_command'])
             register.assert_not_called()

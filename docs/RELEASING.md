@@ -46,8 +46,8 @@ Once the reviewed master commit passes CI, create an annotated version tag
 matching VERSION, then push that specific tag. Do not force or replace a tag:
 
 ```text
-git tag -a v0.1.12 -m "Career Assistant v0.1.12 development preview"
-git push origin v0.1.12
+git tag -a v0.1.13 -m "Career Assistant v0.1.13 development preview"
+git push origin v0.1.13
 ```
 
 The Release workflow checks out that tag and runs the same CI against its exact

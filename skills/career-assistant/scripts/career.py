@@ -24,6 +24,7 @@ def main(argv=None):
     p = sub.add_parser('doctor'); p.add_argument('--host', choices=['codex','claude','both']); p.add_argument('--probe-writes', action='store_true'); p.add_argument('--pdf-smoke', action='store_true')
     p = sub.add_parser('setup'); p.add_argument('--host', choices=['codex','claude','both']); p.add_argument('--browser', choices=['existing','missing','defer','inspect'], default='inspect'); p.add_argument('--search', choices=['existing','missing','defer','inspect'], default='inspect'); p.add_argument('--no-downloads', action='store_true')
     choice = p.add_mutually_exclusive_group(); choice.add_argument('--defer-installation', action='store_true'); choice.add_argument('--resume-installation', action='store_true')
+    p.add_argument('--resume-browser-installation', action='store_true'); p.add_argument('--resume-search', action='store_true')
     p = sub.add_parser('recover-setup'); p.add_argument('--choice', choices=['defer','resume'], required=True); p.add_argument('--confirmation', required=True)
     p = sub.add_parser('import-source'); p.add_argument('path', type=Path); p.add_argument('--kind', choices=['document','user-statement'], default='document')
     for name in ['profile-update', 'preferences-update', 'assess', 'grant']:
@@ -52,22 +53,25 @@ def main(argv=None):
     active_host = 'claude' if Path(__file__).resolve().parents[3].name == '.claude' else 'codex'
     if command == 'setup':
         from environment import setup
-        return setup(args.workspace, args.host or active_host, args.browser, args.search, not args.no_downloads, args.defer_installation, args.resume_installation)
+        return setup(args.workspace, args.host or active_host, args.browser, args.search, not args.no_downloads,
+                     args.defer_installation, args.resume_installation, args.resume_browser_installation, args.resume_search)
     if command == 'recover-setup':
         from environment import recover_setup
         return recover_setup(args.workspace, args.choice, args.confirmation)
     if command == 'render' and not args.source_only or command == 'import-source' and args.path.suffix.lower() == '.pdf':
         from environment import configured_python, probe_python, unavailable_runtime
         selected = configured_python(args.workspace)
-        if selected and Path(sys.prefix).absolute() != selected.parent.parent.absolute():
-            if probe_python(selected) is None:
+        if selected and Path(sys.prefix).resolve() != selected.parent.parent.resolve():
+            verified = probe_python(selected)
+            if verified is None or not isinstance(verified.get('prefix'), str):
                 raise unavailable_runtime()
-            result = subprocess.run([str(selected), str(Path(__file__).resolve()), *(argv if argv is not None else sys.argv[1:])], capture_output=True, text=True, encoding='utf-8', errors='replace')
-            if result.returncode:
-                try: detail = json.loads(result.stderr)['error']
-                except (ValueError, KeyError): detail = 'Configured PDF runtime failed; rerun setup to verify the workspace environment.'
-                raise ValueError(detail)
-            return json.loads(result.stdout)
+            if Path(verified['prefix']).resolve() != Path(sys.prefix).resolve():
+                result = subprocess.run([str(selected), str(Path(__file__).resolve()), *(argv if argv is not None else sys.argv[1:])], capture_output=True, text=True, encoding='utf-8', errors='replace')
+                if result.returncode:
+                    try: detail = json.loads(result.stderr)['error']
+                    except (ValueError, KeyError): detail = 'Configured PDF runtime failed; rerun setup to verify the workspace environment.'
+                    raise ValueError(detail)
+                return json.loads(result.stdout)
     if command in {'backup', 'backup-verify', 'restore-plan', 'restore', 'migrate-plan', 'migrate', 'maintenance-recover', 'history'}:
         import maintenance
         if command == 'backup': return maintenance.backup(store, args.label)

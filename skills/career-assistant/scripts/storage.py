@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = '0.1.12'
+VERSION = '0.1.13'
 SCHEMA = 2
 PRIVATE = '.career-assistant'
 SECRET_KEYS = {'password', 'passwd', 'access_token', 'refresh_token', 'api_key', 'client_secret', 'cookies', 'otp', 'sin', 'ssn', 'passport_number'}

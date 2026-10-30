@@ -25,6 +25,15 @@ downloads or replacement. A missing/broken selected Python makes doctor report
 runtime_required and leaves PDF import/render pending; rerun setup using a working
 Python. Text/profile/source-only steps remain available.
 
+The browser fallback requires Node 20+ and a working paired npm. Node 18 is never
+treated as compatible with the tested MCP/Playwright dependencies; setup prepares
+a private official LTS when allowed. MCP CLI and actual Chromium launch are both
+verified before project registration. Existing Node installations are preserved.
+Browser/search deferrals persist independently of capability inspection; resume
+only the component the user authorizes. All writable dependency/cache destinations
+are checked against the workspace, and retained private TeX resources are
+rediscovered after installer-state recovery before requesting another download.
+
 | Missing capability | Available now | Next action |
 | --- | --- | --- |
 | pypdf | Text/Markdown/DOCX, conversational facts, scoring | Setup installs the local official wheel when permitted |

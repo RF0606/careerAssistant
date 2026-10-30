@@ -49,6 +49,7 @@ def report(workspace, host='codex', probe_writes=False, check_pdf=False):
     setup_problem = None
     try:
         saved = settings(workspace)
+        tool_env(workspace)  # Detect unsafe cache destinations before reporting PDF readiness.
     except SetupError as exc:
         saved = {}
         setup_problem = exc.result

@@ -17,6 +17,7 @@ def escape(text):
 def render(store, job_id, draft, compile_pdf=True):
     if compile_pdf:
         settings(store.workspace)  # Do not mutate a package before resolving unknown download consent.
+        tool_env(store.workspace)  # Reject redirected cache writes before changing resume artifacts.
     job_id = slug(job_id)
     assessment = store.read(f'jobs/{job_id}.json')
     fresh(store, assessment)

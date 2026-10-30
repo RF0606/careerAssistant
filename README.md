@@ -8,12 +8,13 @@ and run applications you authorize. 中文或英文对话均可，简历输出�
 固定简历模板和虚构测试材料。个人职业知识、偏好、岗位 routes 和 resume-tailor
 skills，由用户下载后在自己的本地工作区逐步完善；这些内容不回写到共享源码或发布包。
 
-**v0.1.12：修复中文路径引导、状态校验、链接目录写入和依赖误报，仍为开发预览。**
-Windows Python 引导使用 ASCII JSON 传递路径，兼容 GBK，并验证返回的解释器实际存在。
-重复 JSON 键、错误版本类型和不完整步骤会在安装或改写前被拦住；原件保留供确认恢复。
-状态文件尚不存在时也检查完整目录链，拒绝通过链接写入状态、锁或恢复备份。
-已选 Python 缺失或损坏时，doctor 明确报告需要重新 setup，PDF 保持待处理。
-保留 MCP 配置的 TOML 语义识别、候选验证和冲突保护。
+**v0.1.13：修复浏览器兼容性、组件暂缓、依赖写入边界和恢复后缓存复用，仍为开发预览。**
+浏览器后备方案验证 Node 20+、配套 npm、固定版本 MCP CLI 及 Chromium 的实际启动；
+已有 Node 18 保持原样，缺少兼容运行时时自动准备工作区内的官方 LTS。
+浏览器、搜索的暂缓选择与能力探测分开保存，普通检查不会恢复已暂缓的安装。
+所有依赖安装和缓存写入目标都检查实际位置；外部运行时只读复用，不向共享环境装包。
+恢复安装状态后会重新发现已有私人 TeX 缓存，先做离线验证，再判断是否需要下载。
+保留中文/GBK 路径、严格状态校验、MCP 配置保护及失效 Python 的明确恢复提示。
 初始化时优先复用已有 Python、PDF 和宿主浏览器工具；缺失组件会在当前权限允许时
 自动安装到工作区，重新检测后继续。只有确需额外权限时才询问你，拒绝或暂缓后
 仍可先建档。支持保存安装进度、重试和首次 TeX 资源准备；浏览器后备配置限定当前
@@ -225,7 +226,7 @@ Codex 内置浏览器的真实模拟流程见 [宿主浏览器验收说明](docs
 MIT 许可见 [LICENSE](LICENSE)；第三方宿主、浏览器和 LaTeX 依赖遵循各自许可。
 
 维护者审核更改后运行 `python release.py manifest`、`python release.py verify` 和
-`python release.py pack --output outputs/career-assistant-v0.1.12.zip`。
+`python release.py pack --output outputs/career-assistant-v0.1.13.zip`。
 打包命令同时生成 `START_HERE.txt`、ZIP 的 `.sha256` 文件与 `SHA256SUMS.txt`。
 只分发这些发布文件；测试日志、用户档案、凭据、安装副本和个人 skills 均不在 ZIP 中。
 

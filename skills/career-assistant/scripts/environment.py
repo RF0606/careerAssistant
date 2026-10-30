@@ -29,9 +29,11 @@ from zipfile import ZipFile
 from storage import atomic, atomic_bytes, atomic_text, inside, now
 
 PACKAGES = {'pypdf': 'pypdf>=5,<7', 'fitz': 'PyMuPDF>=1.25,<2'}
+NODE_MIN_MAJOR = 20
+BROWSER_PACKAGE = '@playwright/mcp@0.0.83'
 TRUSTED = {'api.github.com', 'github.com', 'release-assets.githubusercontent.com',
            'objects.githubusercontent.com', 'nodejs.org', 'pypi.org', 'files.pythonhosted.org'}
-PROBE = "import importlib,json,sys,io,contextlib; r={};\nfor n in ['pypdf','fitz']:\n try:\n  with contextlib.redirect_stdout(io.StringIO()),contextlib.redirect_stderr(io.StringIO()): importlib.import_module('pymupdf' if n=='fitz' else n)\n  r[n]=True\n except (ImportError,OSError): r[n]=False\ntry:\n with contextlib.redirect_stdout(io.StringIO()),contextlib.redirect_stderr(io.StringIO()): importlib.import_module('tomllib' if sys.version_info >= (3,11) else 'tomli')\n parser=True\nexcept (ImportError,OSError): parser=False\nprint(json.dumps({'packages':r,'version':list(sys.version_info[:3]),'python':sys.executable,'toml_parser':parser}))"
+PROBE = "import importlib,json,sys,sysconfig,io,contextlib; r={};\nfor n in ['pypdf','fitz']:\n try:\n  with contextlib.redirect_stdout(io.StringIO()),contextlib.redirect_stderr(io.StringIO()): importlib.import_module('pymupdf' if n=='fitz' else n)\n  r[n]=True\n except (ImportError,OSError): r[n]=False\ntry:\n with contextlib.redirect_stdout(io.StringIO()),contextlib.redirect_stderr(io.StringIO()): importlib.import_module('tomllib' if sys.version_info >= (3,11) else 'tomli')\n parser=True\nexcept (ImportError,OSError): parser=False\nprint(json.dumps({'packages':r,'version':list(sys.version_info[:3]),'python':sys.executable,'prefix':sys.prefix,'install_paths':{k:sysconfig.get_path(k) for k in ['purelib','platlib','scripts','data']},'toml_parser':parser}))"
 
 
 class SetupError(Exception):
@@ -87,6 +89,50 @@ def _invalid_constant(value):
     raise ValueError('Non-JSON numeric constant')
 
 
+def _install_path(workspace, path):
+    """A writable dependency destination must resolve inside this workspace."""
+    base = Path(workspace).resolve()
+    path = Path(path).absolute()
+    try:
+        resolved = path.resolve()
+        if '..' in path.parts or not resolved.is_relative_to(base) or resolved == base:
+            raise ValueError('External dependency write target')
+        return resolved
+    except PermissionError:
+        raise SetupError('approval_required', 'The dependency destination cannot be inspected',
+                         'Allow access to this exact workspace destination, then retry. No alternative is used to bypass a denied permission.') from None
+    except (ValueError, OSError, RuntimeError):
+        raise SetupError('configuration_review_required', 'A dependency write target resolves outside the selected workspace',
+                         'Preserve the linked/shared environment. Use a regular local destination before installing; external runtimes may only be reused without changes.') from None
+
+
+def _install_tree(workspace, directory, python_runtime=False):
+    """Inspect pre-existing installer targets without following external links."""
+    directory = _install_path(workspace, directory)
+    pending, seen = [directory], set()
+    while pending:
+        current = _install_path(workspace, pending.pop())
+        if not current.exists():
+            continue
+        resolved = current.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if not current.is_dir():
+            raise SetupError('path_conflict', 'A dependency directory is occupied by a file', 'Preserve it and choose a regular workspace directory.')
+        for child in current.iterdir():
+            # POSIX venvs normally link their interpreter to the host. The fixed
+            # PDF wheels do not replace Python itself; package destinations do
+            # not receive this read/execute-only exception.
+            if (python_runtime and current.name in {'bin', 'Scripts'} and child.is_symlink()
+                    and re.fullmatch(r'python(?:\d+(?:\.\d+)*)?(?:\.exe)?', child.name)):
+                continue
+            _install_path(workspace, child)
+            if child.is_dir():
+                pending.append(child)
+    return directory
+
+
 def settings(workspace):
     path = _local_setup_path(workspace, root(workspace) / 'setup/environment.json')
     try:
@@ -106,6 +152,10 @@ def settings(workspace):
                 or any(not isinstance(step, dict) or not isinstance(step.get('status'), str) or not step['status'].strip()
                        for step in value['steps'].values())):
             raise ValueError('Invalid setup state structure/version')
+        policies = value.get('component_policies', {})
+        if (not isinstance(policies, dict) or set(policies) - {'browser', 'search'}
+                or any(not isinstance(choice, str) or choice not in {'auto', 'deferred'} for choice in policies.values())):
+            raise ValueError('Invalid component installation choices')
         return value
     except PermissionError:
         raise SetupError('approval_required', 'Saved installation choices cannot be read',
@@ -138,8 +188,9 @@ def tool_path(workspace, name):
 def tool_env(workspace):
     env = dict(os.environ)
     cache = settings(workspace).get('steps', {}).get('tex_cache', {})
-    if cache.get('cache_scope') == 'workspace':
-        env['TECTONIC_CACHE_DIR'] = str(root(workspace) / 'tools/tex-cache')
+    private = _install_path(workspace, root(workspace) / 'tools/tex-cache')
+    if cache.get('cache_scope') == 'workspace' or private.is_dir() and any(private.iterdir()):
+        env['TECTONIC_CACHE_DIR'] = str(private)
     return env
 
 
@@ -167,7 +218,9 @@ def _command(args, env=None, timeout=300, input_text=None):
             status, action = 'system_dependencies_required', 'The browser needs OS libraries. If current host/OS permissions already allow system-package installation, run the prepared system dependency command. Otherwise ask for that specific permission. Never invoke sudo or change policy to gain access.'
         else:
             status, action = 'retryable_error', 'Check supported versions and network access, then retry this step. Logs and environment secrets are omitted.'
-        raise SetupError(status, f'Dependency command exited {result.returncode}; output omitted', action, args)
+        failure = SetupError(status, f'Dependency command exited {result.returncode}; output omitted', action, args)
+        failure.result['exit_code'] = result.returncode
+        raise failure
     return result
 
 
@@ -216,8 +269,10 @@ def _fetch(url, max_bytes=300_000_000):
                          'If the host denied network access, ask the user to allow this official download. Otherwise retry when the network is available; do not disable TLS or use an unverified mirror.') from None
 
 
-def _unpack(archive, destination, strip_root=False):
+def _unpack(archive, destination, strip_root=False, workspace=None):
     """Extract only regular files/directories, never archive links or special files."""
+    if workspace is not None:
+        _install_path(workspace, destination)
     destination = Path(destination).resolve()
     destination.mkdir(parents=True, exist_ok=True)
     total = 0
@@ -231,6 +286,8 @@ def _unpack(archive, destination, strip_root=False):
         if not parts:
             return
         target = inside(destination, destination.joinpath(*parts))
+        if workspace is not None:
+            _install_path(workspace, target)
         total += len(data)
         if total > 600_000_000:
             raise SetupError('verification_failed', 'Expanded dependency exceeds size limit', 'Inspect the official asset.')
@@ -270,6 +327,7 @@ def _install_tectonic(workspace, downloads=True):
             pass
     if not downloads:
         raise SetupError('download_required', 'Tectonic is missing', 'Rerun setup with network/installation permission to install the official local binary.')
+    directory = _install_path(workspace, root(workspace) / 'tools')
     machine = platform.machine().lower()
     arch = {'amd64': 'x86_64', 'x86_64': 'x86_64', 'arm64': 'aarch64', 'aarch64': 'aarch64'}.get(machine)
     system = platform.system()
@@ -289,23 +347,22 @@ def _install_tectonic(workspace, downloads=True):
     data = _fetch(asset['browser_download_url'])
     if hashlib.sha256(data).hexdigest() != asset['digest'][7:]:
         raise SetupError('verification_failed', 'Tectonic SHA-256 mismatch', 'Preserve the failure and retry only from the official verified release.')
-    directory = root(workspace) / 'tools'
     directory.mkdir(parents=True, exist_ok=True)
     staged = directory / ('tectonic-stage-' + uuid.uuid4().hex[:10])
     staged.mkdir()
     archive = staged / asset['name']
     archive.write_bytes(data)
     extracted = staged / 'unpacked'
-    _unpack(archive, extracted)
+    _unpack(archive, extracted, workspace=workspace)
     filename = 'tectonic.exe' if os.name == 'nt' else 'tectonic'
     executables = list(extracted.rglob(filename))
     if len(executables) != 1:
         raise SetupError('verification_failed', 'Official archive has an unexpected layout', 'Inspect the release layout before retrying.')
-    _command([executables[0], '--version'], timeout=20)
-    dest = directory / 'tectonic'
+    dest = _install_path(workspace, directory / 'tectonic')
     if dest.exists():
         raise SetupError('path_conflict', 'Local Tectonic directory already exists but is unusable', 'Review this interrupted installation; do not overwrite an unrelated directory.')
     executables[0].parent.rename(dest)
+    _command([dest / filename, '--version'], timeout=20)
     return {'status': 'installed', 'executable': str(dest / filename), 'version': release['tag_name'], 'sha256': asset['digest'][7:]}
 
 
@@ -318,20 +375,49 @@ def _runtime_required(workspace):
 
 def _install_packages(workspace, downloads=True):
     current = probe_python(sys.executable)
-    chosen = next((p for p in local_python(workspace) if p.is_file() and probe_python(p)), None)
     parser_ready = lambda info: info.get('toml_parser', tuple(info.get('version', [])) >= (3, 11))
-    if chosen is None and current and all(current['packages'].values()) and parser_ready(current):
+    complete = lambda info: info and all(info['packages'].get(name) for name in PACKAGES) and parser_ready(info)
+    candidates = [(p, probe_python(p)) for p in local_python(workspace) if p.is_file()]
+    for candidate, info in candidates:
+        if complete(info):
+            return {'status': 'available', 'python_executable': str(candidate), 'packages': info['packages'], 'toml_parser': True}
+    if complete(current):
         return {'status': 'available', 'python_executable': sys.executable, 'packages': current['packages'], 'toml_parser': True}
+    chosen, info, unsafe = None, None, None
+    for candidate, candidate_info in candidates:
+        if not candidate_info:
+            continue
+        try:
+            _install_tree(workspace, candidate.parent.parent, python_runtime=True)
+            _verify_venv_writes(workspace, candidate, candidate_info)
+        except SetupError as exc:
+            if exc.result['status'] == 'approval_required':
+                raise
+            unsafe = exc
+            continue
+        chosen, info = candidate, candidate_info
+        break
     if chosen is None:
-        chosen = next(local_python(workspace))
-        folder = chosen.parent.parent
-        if folder.exists() and any(folder.iterdir()):
-            chosen = list(local_python(workspace))[1]
-            folder = chosen.parent.parent
         if not downloads:
+            if unsafe:
+                raise unsafe
             raise SetupError('download_required', 'PDF Python dependencies are missing', 'Allow local dependency setup; text/DOCX profile work remains usable.')
-        if folder.exists() and any(folder.iterdir()):
-            raise SetupError('path_conflict', 'Existing PDF virtual environment is unusable', 'Review the selected environment; no existing files were reset.')
+        for candidate in local_python(workspace):
+            try:
+                folder = _install_tree(workspace, candidate.parent.parent, python_runtime=True)
+            except SetupError as exc:
+                if exc.result['status'] == 'approval_required':
+                    raise
+                unsafe = exc
+                continue
+            if not folder.exists() or not any(folder.iterdir()):
+                chosen = candidate
+                break
+        if chosen is None:
+            if unsafe:
+                raise unsafe
+            raise SetupError('path_conflict', 'Existing PDF virtual environments are unusable', 'Review the environments; no existing files were reset.')
+        folder = chosen.parent.parent
         if venv is None:
             raise _runtime_required(workspace)
         try:
@@ -350,6 +436,9 @@ def _install_packages(workspace, downloads=True):
     if missing:
         if not downloads:
             raise SetupError('download_required', 'PDF Python dependencies are missing', 'Allow downloads and retry setup.')
+        _verify_venv_writes(workspace, chosen, info)
+        _install_tree(workspace, chosen.parent.parent, python_runtime=True)
+        pip_cache = _install_tree(workspace, root(workspace)/'setup/pip-cache')
         try:
             _command([chosen, '-m', 'pip', '--version'], timeout=30)
         except SetupError as exc:
@@ -362,22 +451,39 @@ def _install_packages(workspace, downloads=True):
                     raise
                 raise _runtime_required(workspace) from None
         _command([chosen, '-m', 'pip', 'install', '--isolated', '--disable-pip-version-check',
-                  '--index-url', 'https://pypi.org/simple', '--cache-dir', root(workspace)/'setup/pip-cache', '--only-binary=:all:', *missing], timeout=600)
+                  '--index-url', 'https://pypi.org/simple', '--cache-dir', pip_cache, '--only-binary=:all:', *missing], timeout=600)
     verified = probe_python(chosen)
     if not verified or not all(verified['packages'].values()) or not parser_ready(verified):
         raise SetupError('verification_failed', 'Installed PDF packages failed import', 'Inspect the local interpreter and compatible official wheels; keep PDF output draft.')
     return {'status': 'installed' if missing else 'available', 'python_executable': str(chosen), 'packages': verified['packages'], 'toml_parser': True}
 
 
+def _verify_venv_writes(workspace, executable, info):
+    folder = _install_path(workspace, Path(executable).parent.parent).resolve()
+    if not isinstance(info.get('prefix'), str) or Path(info['prefix']).resolve() != folder:
+        raise SetupError('configuration_review_required', 'The selected local executable does not own this virtual environment',
+                         'Reuse it without changes or prepare a complete local venv. No global/shared pip installation is allowed.')
+    paths = info.get('install_paths')
+    if not isinstance(paths, dict) or set(paths) != {'purelib', 'platlib', 'scripts', 'data'}:
+        raise SetupError('verification_failed', 'Python installation destinations could not be verified', 'Recheck this runtime before installing packages.')
+    for path in paths.values():
+        if not isinstance(path, str) or not _install_path(workspace, path).resolve().is_relative_to(folder):
+            raise SetupError('configuration_review_required', 'Python package destinations leave the selected virtual environment',
+                             'Preserve this environment; use a complete local venv before installing packages.')
+
+
 def _warm_tex(workspace, compiler, downloads=True, save=None):
     template = Path(__file__).resolve().parent.parent / 'assets/resume-template.tex'
     text = template.read_text(encoding='utf-8')
-    values = {'HEADER': r'\begin{center}Career Assistant Environment Check\end{center}',
-              'SUMMARY': 'Non-personal dependency probe.', 'SKILLS': 'Template resources and fonts.',
-              'EXPERIENCE': 'Environment check only.', 'PROJECTS': '', 'EDUCATION': 'No personal career facts.'}
+    values = {'HEADER': r'\begin{center}{\Huge\scshape Environment Check}\\\small Anonymous template probe\end{center}',
+              'SUMMARY': 'Non-personal dependency probe.',
+              'SKILLS': r'\textbf{Resources:} R\&D, C\#, 12\%, data\_quality.',
+              'EXPERIENCE': r'\resumeSubHeadingListStart\resumeSubheading{Template resource check}{Offline}{Anonymous probe}{Local}\resumeItemListStart\resumeItem{Verify heading, italic and bullet fonts.}\resumeItemListEnd\resumeSubHeadingListEnd',
+              'PROJECTS': '',
+              'EDUCATION': r'\resumeSubHeadingListStart\resumeSubheading{Template validation}{Local}{No personal career facts}{}\resumeSubHeadingListEnd'}
     for key, value in values.items():
         text = text.replace('@@' + key + '@@', value)
-    directory = root(workspace) / 'setup' / ('tex-probe-' + uuid.uuid4().hex[:10])
+    directory = _install_path(workspace, root(workspace) / 'setup' / ('tex-probe-' + uuid.uuid4().hex[:10]))
     directory.mkdir(parents=True)
     source = directory / 'probe.tex'; source.write_text(text, encoding='utf-8')
     env = tool_env(workspace)
@@ -391,7 +497,7 @@ def _warm_tex(workspace, compiler, downloads=True, save=None):
             raise
     if not downloads:
         raise SetupError('download_required', 'Canonical TeX resources are not cached', 'Permit the first template compilation/download; profile work can continue.')
-    env['TECTONIC_CACHE_DIR'] = str(root(workspace) / 'tools/tex-cache')
+    env['TECTONIC_CACHE_DIR'] = str(_install_tree(workspace, root(workspace) / 'tools/tex-cache'))
     # Persist the cache choice before compilation, including on interruption/failure.
     if save:
         save({'status': 'installing', 'cache_scope': 'workspace'})
@@ -402,25 +508,28 @@ def _warm_tex(workspace, compiler, downloads=True, save=None):
             'scope': 'Canonical template resources only; no user resume was generated.'}
 
 
-def _node(workspace, downloads):
-    private = root(workspace)/'tools/node'
-    node = private/('node.exe' if os.name == 'nt' else 'bin/node')
-    candidates = [node] if node.is_file() else []
-    found = shutil.which('node')
+def _node(workspace, downloads, minimum=NODE_MIN_MAJOR, exclude=(), local_only=False):
+    folders = [root(workspace)/'tools/node', root(workspace)/'tools/browser-node']
+    candidates = [folder/('node.exe' if os.name == 'nt' else 'bin/node') for folder in folders
+                  if (folder/('node.exe' if os.name == 'nt' else 'bin/node')).is_file()]
+    found = shutil.which('node') if not local_only else None
     if found:
         candidates.append(Path(found).resolve())
     for candidate in candidates:
+        if str(candidate) in exclude:
+            continue
         try:
             version = _command([candidate, '--version'], timeout=20).stdout.strip()
-            if int(version.lstrip('v').split('.')[0]) < 18:
+            if int(version.lstrip('v').split('.')[0]) < minimum:
                 continue
             npm = shutil.which('npm')
             paths = [candidate.parent/'node_modules/npm/bin/npm-cli.js',
                      candidate.parent.parent/'lib/node_modules/npm/bin/npm-cli.js']
             if npm and Path(npm).resolve().name == 'npm-cli.js':
-                paths.insert(0, Path(npm).resolve())
+                paths.append(Path(npm).resolve())
             cli = next((p for p in paths if p.is_file()), None)
             if cli:
+                _command([candidate, cli, '--version'], timeout=20)
                 return str(candidate), str(cli)
         except SetupError as exc:
             if exc.result['status'] == 'approval_required':
@@ -428,7 +537,11 @@ def _node(workspace, downloads):
         except ValueError:
             pass
     if not downloads:
-        raise SetupError('download_required', 'Node.js/npm is missing for the browser fallback', 'Permit the official local Node.js LTS download.')
+        raise SetupError('download_required', f'The browser needs compatible Node.js {minimum}+ and npm', 'Permit the official local Node.js LTS download; existing runtimes remain unchanged.')
+    private = next((folder for folder in folders if not folder.exists()), None)
+    if private is None:
+        raise SetupError('path_conflict', 'Local Node runtime directories are occupied but incompatible', 'Review these existing directories; they were not overwritten.')
+    _install_path(workspace, private)
     machine = {'amd64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64', 'aarch64': 'arm64'}.get(platform.machine().lower())
     system = {'Windows': 'win', 'Darwin': 'darwin', 'Linux': 'linux'}.get(platform.system())
     if not machine or not system:
@@ -443,16 +556,20 @@ def _node(workspace, downloads):
     data = _fetch(prefix+name)
     if not expected or hashlib.sha256(data).hexdigest() != expected:
         raise SetupError('verification_failed', 'Official Node archive SHA-256 mismatch', 'Do not execute the download; inspect the official release.')
-    tools = root(workspace)/'tools'; tools.mkdir(parents=True, exist_ok=True)
+    tools = _install_path(workspace, root(workspace)/'tools'); tools.mkdir(parents=True, exist_ok=True)
     staged = tools/('node-stage-'+uuid.uuid4().hex[:10]); staged.mkdir()
     archive = staged/name; archive.write_bytes(data)
-    _unpack(archive, staged/'unpacked', strip_root=True)
+    _unpack(archive, staged/'unpacked', strip_root=True, workspace=workspace)
     if private.exists():
         raise SetupError('path_conflict', 'Local Node directory already exists but is unusable', 'Review the interrupted install; do not overwrite existing tools.')
     (staged/'unpacked').rename(private)
     node = private/('node.exe' if os.name == 'nt' else 'bin/node')
     cli = private/('node_modules/npm/bin/npm-cli.js' if os.name == 'nt' else 'lib/node_modules/npm/bin/npm-cli.js')
-    _command([node, '--version'], timeout=20)
+    # Windows may retain executable handles briefly after a process exits.
+    # Finish the verified archive move before executing anything from that tree.
+    if int(_command([node, '--version'], timeout=20).stdout.strip().lstrip('v').split('.')[0]) < minimum:
+        raise SetupError('unsupported', 'The official Node runtime does not meet the browser dependency requirement', 'Use a supported runtime; no host configuration was changed.')
+    _command([node, cli, '--version'], timeout=20)
     return str(node), str(cli)
 
 
@@ -564,19 +681,49 @@ def _register_browser(workspace, host, server):
 
 
 def _install_browser(workspace, host, downloads):
-    node, npm = _node(workspace, downloads)
-    directory = root(workspace)/'tools/browser'
+    try:
+        return _prepare_browser(workspace, host, downloads)
+    except SetupError as exc:
+        # Retry a native runtime crash once with a verified local LTS. Permission,
+        # policy, network and ordinary package errors never trigger this fallback.
+        crash_codes = {-11, -6, -4, 0xC0000005, -1073741819, 0xC000001D}
+        command = exc.result.get('command', [])
+        if (not downloads or exc.result['status'] != 'retryable_error'
+                or exc.result.get('exit_code') not in crash_codes or not command):
+            raise
+        runtime = _node(workspace, True, exclude=(command[0],), local_only=True)
+        return _prepare_browser(workspace, host, downloads, runtime)
+
+
+def _prepare_browser(workspace, host, downloads, runtime=None):
+    node, npm = runtime or _node(workspace, downloads)
+    directory = _install_path(workspace, root(workspace)/'tools/browser')
     module = directory/'node_modules/@playwright/mcp'
     if not (module/'package.json').is_file():
         if not downloads:
             raise SetupError('download_required', 'Microsoft Playwright MCP is missing', 'Allow the official npm package installation in this workspace.')
+        _install_tree(workspace, directory)
+        npm_cache = _install_tree(workspace, root(workspace)/'setup/npm-cache')
         _command([node, npm, 'install', '--prefix', directory, '--ignore-scripts', '--no-audit', '--no-fund',
-                  '--cache', root(workspace)/'setup/npm-cache', '--registry=https://registry.npmjs.org', '@playwright/mcp@latest'], timeout=600)
-    env = dict(os.environ, PLAYWRIGHT_BROWSERS_PATH=str(root(workspace)/'browser/engines'))
+                  '--cache', npm_cache, '--registry=https://registry.npmjs.org', BROWSER_PACKAGE], timeout=600)
+    engines = _install_tree(workspace, root(workspace)/'browser/engines')
+    profile = _install_tree(workspace, root(workspace)/'browser/profile')
+    env = dict(os.environ, PLAYWRIGHT_BROWSERS_PATH=str(engines))
     library = next((directory/'node_modules'/name for name in ['playwright', 'playwright-core']
                     if (directory/'node_modules'/name/'cli.js').is_file()), None)
     if library is None:
         raise SetupError('verification_failed', 'Playwright package layout is unavailable', 'Inspect the official package before configuring the host.')
+    package = json.loads((module/'package.json').read_text(encoding='utf-8'))
+    binary = package['bin']; binary = binary if isinstance(binary,str) else next(iter(binary.values()))
+    minimum = NODE_MIN_MAJOR
+    for metadata in [package, json.loads((library/'package.json').read_text(encoding='utf-8'))]:
+        required = re.search(r'>=\s*(\d+)', metadata.get('engines', {}).get('node', ''))
+        if required:
+            minimum = max(minimum, int(required[1]))
+    if int(_command([node, '--version'], timeout=20).stdout.strip().lstrip('v').split('.')[0]) < minimum:
+        node, npm = _node(workspace, downloads, minimum)
+    # Browser launch alone does not prove that the MCP CLI can run in this Node.
+    _command([node, module/binary, '--version'], env=env, timeout=30)
     probe = "const {chromium}=require(process.argv[1]); (async()=>{const b=await chromium.launch({headless:true});console.log(JSON.stringify({executable:chromium.executablePath()}));await b.close();})().catch(e=>{console.error(e.message);process.exit(1);});"
     def verify_browser():
         try:
@@ -593,13 +740,12 @@ def _install_browser(workspace, host, downloads):
         _command([node, library/'cli.js', 'install', 'chromium'], env=env, timeout=600)
         result = verify_browser()
     executable = json.loads(result.stdout)['executable']
-    package = json.loads((module/'package.json').read_text(encoding='utf-8'))
-    binary = package['bin']; binary = binary if isinstance(binary,str) else next(iter(binary.values()))
     server = {'command': node, 'args': [str(module/binary), '--executable-path', executable,
-                                        '--user-data-dir', str(root(workspace)/'browser/profile')],
+                                        '--user-data-dir', str(profile)],
               'env': {'PLAYWRIGHT_BROWSERS_PATH': env['PLAYWRIGHT_BROWSERS_PATH']}}
     _register_browser(workspace, host, server)
     return {'status': 'host_reload_required', 'installed': True, 'project_configured': True,
+            'mcp_version': package.get('version'), 'node_minimum': minimum,
             'next_action': 'Reload the host/project and inspect the real browser API. Approve the project/tool prompt if required; login is a separate user action. Search can use this browser after connection.'}
 
 
@@ -661,10 +807,13 @@ def recover_setup(workspace, choice, confirmation):
         return _state_failure(workspace, exc)
 
 
-def setup(workspace, host='codex', browser='inspect', search='inspect', downloads=True, defer=False, resume=False):
+def setup(workspace, host='codex', browser='inspect', search='inspect', downloads=True, defer=False, resume=False,
+          resume_browser=False, resume_search=False):
     workspace = Path(workspace).resolve()
     if defer and resume:
         raise ValueError('Choose deferral or resumption, not both')
+    if defer and (resume_browser or resume_search) or resume_browser and browser == 'defer' or resume_search and search == 'defer':
+        raise ValueError('Choose consistent component deferral/resumption flags')
     state_path = root(workspace)/'setup/environment.json'
     try:
         # Invalid/unreadable existing state is not equivalent to a first run.
@@ -679,15 +828,31 @@ def setup(workspace, host='codex', browser='inspect', search='inspect', download
             os.write(fd, str(os.getpid()).encode()); os.close(fd)
             # Re-read under the lock so a just-saved user choice cannot be lost.
             state = settings(workspace)
+            policies = state.setdefault('component_policies', {})
+            for component in ['browser', 'search']:
+                if component not in policies and state.get('steps', {}).get(component, {}).get('status') == 'deferred':
+                    policies[component] = 'deferred'
             if defer:
                 state['installation_policy'] = 'deferred'
+                policies.update(browser='deferred', search='deferred')
             elif resume:
                 state['installation_policy'] = 'auto'
+                policies.update(browser='auto', search='auto')
             state.setdefault('installation_policy', 'auto')
-            if state['installation_policy'] == 'deferred':
-                downloads = False
-                if browser == 'missing':
-                    browser = 'defer'
+            if browser == 'defer':
+                policies['browser'] = 'deferred'
+            if search == 'defer':
+                policies['search'] = 'deferred'
+            if resume_browser:
+                policies['browser'] = 'auto'
+            if resume_search:
+                policies['search'] = 'auto'
+            pdf_downloads = downloads and state['installation_policy'] == 'auto'
+            browser_deferred = policies.get('browser', state['installation_policy']) == 'deferred'
+            if browser_deferred and browser != 'existing':
+                browser = 'defer'
+            if policies.get('search', state['installation_policy']) == 'deferred':
+                search = 'defer'
             state.update(schema_version=1, kind='dependency_setup', workspace=str(workspace), updated_at=now(), status='checking')
             state.setdefault('steps', {})
             state['state_path'] = str(state_path)
@@ -715,14 +880,14 @@ def setup(workspace, host='codex', browser='inspect', search='inspect', download
                               'next_action':'Check the selected tool/runtime/network and retry; previous completed work is retained and details are omitted.'}
                 save(name,result)
                 return result
-            packages = step('python_packages',lambda:_install_packages(workspace,downloads))
-            compiler = step('tectonic',lambda:_install_tectonic(workspace,downloads))
+            packages = step('python_packages',lambda:_install_packages(workspace,pdf_downloads))
+            compiler = step('tectonic',lambda:_install_tectonic(workspace,pdf_downloads))
             if compiler.get('executable') and packages['status'] in {'available','installed'}:
-                step('tex_cache',lambda:_warm_tex(workspace,compiler['executable'],downloads,lambda v:save('tex_cache',v)))
+                step('tex_cache',lambda:_warm_tex(workspace,compiler['executable'],pdf_downloads,lambda v:save('tex_cache',v)))
             else:
                 save('tex_cache',{'status':'waiting_for_dependencies','next_action':'Resolve PDF Python/Tectonic setup first; profile collection can continue.'})
             if browser == 'missing':
-                step('browser',lambda:_install_browser(workspace,host,downloads))
+                step('browser',lambda:_install_browser(workspace,host,downloads and not browser_deferred))
             else:
                 save('browser',{'status':{'existing':'available','defer':'deferred','inspect':'host_inspection_required'}[browser],
                                 'next_action':'Use the host-approved browser API; presence of a CLI alone proves no browser session.'})
@@ -741,7 +906,7 @@ def setup(workspace, host='codex', browser='inspect', search='inspect', download
             state['python_executable'] = packages.get('python_executable',sys.executable)
             state['next_action'] = 'Use the returned Python for helpers. Continue saved onboarding; request only actual pending permission, host connection or sign-in actions.'
             if state['installation_policy'] == 'deferred':
-                state['next_action'] = 'Installation was deferred by the user. Continue independent profile work without asking again or downloading. After the user authorizes installation, resume with --resume-installation; host/OS permission is still required.'
+                state['next_action'] = 'Default/PDF installation was deferred. Preserve saved component choices and continue profile work without asking again. An explicit --resume-browser-installation only permits browser preparation; --resume-installation resumes all components after user authorization. Host/OS permission is still required.'
             atomic(_local_setup_path(workspace, state_path),state)
         finally:
             lock.unlink(missing_ok=True)

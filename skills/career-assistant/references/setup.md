@@ -79,6 +79,10 @@ The helper runs a resumable installation flow:
   and every requested host are checked before any write. Python 3.10 uses the
   conditional local tomli dependency; Python 3.11+ uses its standard parser.
   Existing configuration content is never logged.
+  Node 20+ and its paired npm must actually execute. This release installs the
+  tested @playwright/mcp@0.0.83 package; the MCP CLI must run as well as Chromium
+  before any server registration. Node 18 is preserved and skipped. A compatible
+  local LTS can coexist under tools/browser-node if tools/node is occupied.
 - Search and site authentication are host/account capabilities. Search can use
   existing search tools or the connected browser. No account, paid service, API
   credentials, CAPTCHA/2FA exception or submission permission is installed.
@@ -92,6 +96,20 @@ If the user declines or postpones installation, run setup --defer-installation
 to persist that choice. Ordinary later setup calls honor it without downloads.
 Use --resume-installation only after the user's later installation authorization;
 this flag does not grant OS/host permission or bypass any denial.
+Browser/search choices also persist in component_policies, including older saved
+deferred steps. Ordinary inspect/missing observations do not revoke them. After
+the user explicitly resumes just the browser, use --resume-browser-installation;
+it does not authorize PDF downloads. Use --resume-search for that explicit choice.
+--resume-installation resumes all components only when that broader authorization
+was actually given. Existing host browser availability is separate from permission
+to install a fallback later.
+
+Every writable tool, venv, npm/pip cache, Chromium engine/profile and TeX cache
+destination must resolve inside the selected workspace. Existing dependency trees
+are checked before installer commands. A complete external runtime can be reused
+without changes; an incomplete linked venv uses a safe local fallback rather than
+external pip. Normal POSIX interpreter links remain valid. Unsafe paths require
+configuration review, not a security-policy change.
 
 An existing state file that is damaged, unreadable, structurally invalid or has an
 unknown version never becomes a first run and never authorizes downloads. Doctor
@@ -112,6 +130,10 @@ linked directories cannot redirect state, locks or recovery backups elsewhere.
 If doctor reports runtime_required for a missing/broken selected Python, rerun
 setup with a working runtime before PDF import/render. Parent Python packages do
 not make the failed selected runtime ready. Keep independent profile work moving.
+Recovering metadata does not discard reusable TeX resources: the helper discovers
+the known private cache and tests it offline even when steps/cache_scope was lost.
+Only a failed offline probe can request resource download. The original user
+deferral remains in force.
 
 ## Actual permission and connection requests
 

@@ -1,5 +1,5 @@
 {
-  "version": "0.1.12",
+  "version": "0.1.13",
   "files": {
     ".gitattributes": {
       "sha256": "c18a2d17cc6f71c9b5c0b3d45f87eb903e18e2f8afc517f2f6f4ad7f3880e10d",
@@ -22,15 +22,15 @@
       "bytes": 1086
     },
     "README.md": {
-      "sha256": "3377ccffe5635f125bcadbd5052fe27d641d731ebae0da94f1da894dbc0dee1b",
-      "bytes": 17104
+      "sha256": "bf6a210724f9e1b3ac2f86149e34e777d8a05d9050291604521e1cc53a8590e6",
+      "bytes": 17252
     },
     "START_HERE_CODEX.md": {
-      "sha256": "0d008ab66152e40f231a810d8b3c35a5c42d7f3edcbd2e082754e86bd6133954",
+      "sha256": "a04e325fc9b588a482ce29a60754ba3ccd8052813ca303d713ca29ce4bfda941",
       "bytes": 6566
     },
     "VERSION": {
-      "sha256": "0a6c8dc4148eed841498d2c2be544947a62f8f50c381b2e64bcd7ce40461cf34",
+      "sha256": "976e7492a0ab4e0e742f1c8af5c345fde0d450bfb22c01b0e40c4cf80a42cd10",
       "bytes": 7
     },
     "install.py": {
@@ -38,12 +38,12 @@
       "bytes": 4065
     },
     "package-lock.json": {
-      "sha256": "c96ed4fd4a42592c6e498ba840e36c5007a7174c04f0b6919f45b017a7e29e48",
-      "bytes": 1248
+      "sha256": "77acbbd001fdd875f1c2bfdb3bf07258b366deb5619b4833d6f4dde5065dc19e",
+      "bytes": 1283
     },
     "package.json": {
-      "sha256": "372242e880c006288775c57f183fd34243d7a7114082db57dc1621bbb9b24104",
-      "bytes": 328
+      "sha256": "cf9781b2c921b332b2088665de3480d8eebcf0ddf9e5b824ef5b90604029b255",
+      "bytes": 359
     },
     "release.py": {
       "sha256": "a6c3ffa819087ada631f4550f3cf6aa56186602079b4426f051a449357df51c1",
@@ -58,7 +58,7 @@
       "bytes": 2935
     },
     ".github/workflows/release.yml": {
-      "sha256": "59609593725dee4c73599731d5b5eae92cb83e45ae94e37e9cf9db8bb9711d19",
+      "sha256": "a2008fc7e8033736fe0119933f5011bed194abaa57d3ee0aa113b72fcf60a152",
       "bytes": 1470
     },
     "docs/CODEX_SETUP.md": {
@@ -66,28 +66,28 @@
       "bytes": 4083
     },
     "docs/COLD_START.md": {
-      "sha256": "22b22870571ceb32d8770cff0168dfe3f7dbd4db965167922adcc81bfb0dfa89",
-      "bytes": 5655
+      "sha256": "f5447aa4970cd5d69f03c90373e4a01ec55815b1445e6aaf262c7253ec4640cc",
+      "bytes": 6299
     },
     "docs/HOST_BROWSER_VALIDATION.md": {
       "sha256": "99fa25d251c6a710be75b1bfeeb066a9daf5b3f7d6fc2b55a8d34a54301dcbd9",
       "bytes": 3805
     },
     "docs/RELEASE_NOTES.md": {
-      "sha256": "5fe44a029e99feabd0a34fe38cf20f2f42a6da8d5a7a08fbca5739b58660ac08",
-      "bytes": 6432
+      "sha256": "42d96a0f45de017ffcee25a4c5ba222d8858768053ba46d2d1043113cdc90417",
+      "bytes": 7498
     },
     "docs/RELEASING.md": {
-      "sha256": "e668730104013f92a38869c6f4ec13638adb7fb849b65c2276613309eed443e0",
+      "sha256": "380a7baa542e8fc71f0adc29ee3943d4a136918408f2493fba24ade945d14f81",
       "bytes": 3967
     },
     "docs/VALIDATION.md": {
-      "sha256": "eff39fbcc133b749ab6ba49fde205a6555f19cdb715094dc46171a9f0545155a",
-      "bytes": 4686
+      "sha256": "e7c7f0017352730407cc7ae445d5a00d248e319414b3e6ef5a98c1608451231e",
+      "bytes": 5385
     },
     "docs/VALIDATION_HISTORY.md": {
-      "sha256": "165a924b5d056583ac0116facb1506929792b6bc7466b13359cbbb0a43b71c9f",
-      "bytes": 49850
+      "sha256": "dc32f11352f34cb7f6ca98754b0b43c9f8b02f98fe5e8400a4ad18700cb7e42d",
+      "bytes": 54542
     },
     "examples/README.md": {
       "sha256": "3d482ccb3145d4c71e86c181b40e6e2d7359ceb14f96eff4af66b757e32d4624",
@@ -130,8 +130,8 @@
       "bytes": 3581
     },
     "skills/career-assistant/references/setup.md": {
-      "sha256": "9f62848625d4f2c7a68fe5d744262b8d8ff15a82cb53a1348230d6df7f2fc681",
-      "bytes": 9853
+      "sha256": "d88045b272a44b0f157501e68b38cd3291ad838144239900ca1bde18c12efb33",
+      "bytes": 11417
     },
     "skills/career-assistant/references/workday-login.md": {
       "sha256": "3d800d6aaf3706046650723701a09a049bc36d6b8abfaa720f73418451cd1a59",
@@ -146,16 +146,16 @@
       "bytes": 6095
     },
     "skills/career-assistant/scripts/capabilities.py": {
-      "sha256": "6c105899045215969675048193d2c7262d1ba8df83ad6e000cbcd2a30af93a61",
-      "bytes": 7137
+      "sha256": "acf18f50e19ea0e56f2168c9aca8f93f90f383da9e61dea86ee6458f0aefe382",
+      "bytes": 7233
     },
     "skills/career-assistant/scripts/career.py": {
-      "sha256": "9a1e3240705a68cbbdccb28d7fe3a71f68a4adb51a6e2a0cadd364a16d911b6c",
-      "bytes": 9500
+      "sha256": "6844914d58848a54a1a2ef9e3f3e333d74763cce2b21b319ddb5c87a2aa6e07d",
+      "bytes": 9886
     },
     "skills/career-assistant/scripts/environment.py": {
-      "sha256": "f64d89178f801510e4c32ee0b010db25323896164f7b6192e3671c6fe79b0eb4",
-      "bytes": 47380
+      "sha256": "7c9668b2d2d6951152352a86b95b00da74d59310eb4724b38ae34459d4b8df73",
+      "bytes": 57724
     },
     "skills/career-assistant/scripts/jobs.py": {
       "sha256": "de9372541582a449b5029e7cd5663259202782bbd1fea26e869e23ddfcf34972",
@@ -174,15 +174,15 @@
       "bytes": 14423
     },
     "skills/career-assistant/scripts/resume.py": {
-      "sha256": "a056ac2d1e77d3488af45f2d99d44be9199bb157f71973f7c95516ca8a273b2a",
-      "bytes": 11115
+      "sha256": "d3222198ef90d747ae557e4635479ae014376ab06a40704481371b59b783e0c4",
+      "bytes": 11217
     },
     "skills/career-assistant/scripts/roles.py": {
       "sha256": "938c4cb64943ab8c06880bf60fa4e0ba6ed5749a6faa50c2d8d68a35c07cef86",
       "bytes": 3906
     },
     "skills/career-assistant/scripts/storage.py": {
-      "sha256": "661b6de5c9151d0335bdbbb9fc29a6c0ecb785880eab7a20a77aa94a247343dd",
+      "sha256": "e93a3a8a870af74fb3259fc1a8ac010f7bf31777e74a53d33705ae94be17672d",
       "bytes": 13064
     },
     "skills/career-assistant/SKILL.md": {
@@ -234,8 +234,8 @@
       "bytes": 8586
     },
     "tests/test_environment.py": {
-      "sha256": "d59765b3126dea2c990cbc8b416d3bcd498b9acc7df5822fd7c4bd2daf12ccf4",
-      "bytes": 46828
+      "sha256": "43f6035ddbc4affadaa610a0c8f8d0d5f9bb75e82b6b7db5255f9c07982c8f0d",
+      "bytes": 47263
     },
     "tests/test_host_browser_fixture.py": {
       "sha256": "0d0b9bb9e697c1ff974c3987f97e5824fdee906121d4c83564c6c159ed6dee28",
@@ -252,6 +252,10 @@
     "tests/test_role_lifecycle.py": {
       "sha256": "44ae23568c1b2fddd60365861e5297aeb7f72fcb9a8c43a6b19ac1c59753c654",
       "bytes": 15099
+    },
+    "tests/test_setup_recovery.py": {
+      "sha256": "e0ce5319502de00c9acf015f9d0b17953690c6a7c8ad5d7f2e612b1b08f58788",
+      "bytes": 19452
     },
     "tests/test_workflow.py": {
       "sha256": "155b365f6a9470efa4123def78198e4e4f8904f35b24fb0917fdfffa91b48857",

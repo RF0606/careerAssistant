@@ -51,7 +51,7 @@ Suggested prompt after extracting this ZIP into a new career-assistant directory
    distinct requisitions/title-only user review, invalid preference updates,
    bounded Windows file-sharing retry, interrupted role generation/retry and verification of every requested
    host's skill, and stale role/route context across resume and submission steps.
-8. Run `python release.py pack --output outputs/career-assistant-v0.1.12.zip`.
+8. Run `python release.py pack --output outputs/career-assistant-v0.1.13.zip`.
    The pack command also writes startup instructions and SHA256SUMS.txt. Extract
    the final ZIP, verify its manifest, install both host copies and rerun tests there.
 
@@ -68,7 +68,7 @@ repository and push the clean source. Typical commands, issued separately:
 ```text
 git init -b master
 git add README.md LICENSE VERSION AGENTS.md CLAUDE.md START_HERE_CODEX.md .gitignore .gitattributes .github install.py release.py requirements.txt package.json package-lock.json skills tests examples docs release_manifest.json
-git commit -m "fix: release Career Assistant v0.1.12"
+git commit -m "fix: release Career Assistant v0.1.13"
 gh repo create careerAssistant --public --source . --remote origin --push
 ```
 
@@ -93,6 +93,6 @@ Preserve Projects OFF by default, with an optional separate block after Work Exp
 Preserve locally stored Workday username/password pairs and sanitized in-memory filling.
 Do not inherit any other user's standing registration or submission permission.
 Actual platform support is host-driven; prioritize verified form changes and concise
-blocked explanations. v0.1.12 has no hosted model backend or background scheduler.
+blocked explanations. v0.1.13 has no hosted model backend or background scheduler.
 Current acceptance is development-preview only until both real-host conversation
 gates pass. See docs/VALIDATION.md; a safe ZIP alone is not full product acceptance.

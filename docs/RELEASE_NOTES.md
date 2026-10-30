@@ -1,3 +1,23 @@
+# Career Assistant v0.1.13 — Compatible browsers and durable setup choices
+
+Browser preparation requires Node 20+, working paired npm, the tested
+@playwright/mcp@0.0.83 CLI and an actual Chromium launch. Incompatible Node 18 is
+preserved while a private LTS is prepared when allowed. Component deferrals are
+saved independently from capability inspection, with explicit browser/search
+resume options and compatible handling of older deferred steps.
+
+Dependency installations validate writable directories, nested links, actual venv
+prefix/package destinations and caches. External complete runtimes remain usable
+without changes; incomplete linked environments use a local fallback. A linked
+runtime already in use is recognized by its resolved prefix rather than spawning
+itself again. Existing private TeX resources are rediscovered after metadata
+recovery and verified offline before downloading.
+
+Only standard reusable software and fictional tests ship. Account/model/site
+acceptance remains scoped in docs/VALIDATION.md; this is a development preview.
+
+---
+
 # Career Assistant v0.1.12 — Reliable native setup and accurate dependency checks
 
 Windows interpreter probes exchange ASCII JSON and verify the final executable,
