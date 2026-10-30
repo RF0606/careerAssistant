@@ -82,8 +82,8 @@
       "bytes": 3967
     },
     "docs/VALIDATION.md": {
-      "sha256": "a73c523ee87eefc1777c6d04231b06ad876ceec9f376634056c609fd422d17c5",
-      "bytes": 4527
+      "sha256": "eff39fbcc133b749ab6ba49fde205a6555f19cdb715094dc46171a9f0545155a",
+      "bytes": 4686
     },
     "docs/VALIDATION_HISTORY.md": {
       "sha256": "165a924b5d056583ac0116facb1506929792b6bc7466b13359cbbb0a43b71c9f",
@@ -234,8 +234,8 @@
       "bytes": 8586
     },
     "tests/test_environment.py": {
-      "sha256": "77740d61a383f0a0028a06b5d862276ee51a8dd5fde81f0b6ac22806a96656f8",
-      "bytes": 46546
+      "sha256": "d59765b3126dea2c990cbc8b416d3bcd498b9acc7df5822fd7c4bd2daf12ccf4",
+      "bytes": 46828
     },
     "tests/test_host_browser_fixture.py": {
       "sha256": "0d0b9bb9e697c1ff974c3987f97e5824fdee906121d4c83564c6c159ed6dee28",

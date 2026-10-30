@@ -578,8 +578,12 @@ class EnvironmentTests(unittest.TestCase):
                 result=subprocess.run([shell,'-NoProfile','-File',str(script),'-Workspace',str(workspace),'-Python',str(python),'-CheckOnly'],env=environment,capture_output=True,text=True,encoding='ascii',timeout=40)
                 self.assertEqual(0,result.returncode,result.stderr)
                 data=json.loads(result.stdout)
-                self.assertEqual('available',data['status']);self.assertEqual(str(python),data['python_executable'])
-                self.assertTrue(Path(data['python_executable']).is_file())
+                self.assertEqual('available',data['status'])
+                selected=Path(data['python_executable'])
+                # Windows temp paths can use 8.3 aliases; identity must survive
+                # normalization while the Chinese directory remains intact.
+                self.assertTrue(selected.is_absolute());self.assertTrue(selected.samefile(python))
+                self.assertIn(workspace.name,str(selected));self.assertNotIn('\ufffd',str(selected))
                 initialized=subprocess.run([data['python_executable'],str(script.with_name('career.py')),'--workspace',str(workspace),'init'],env=environment,capture_output=True,text=True,encoding='utf-8',timeout=30)
                 self.assertEqual(0,initialized.returncode,initialized.stderr)
         self.assertFalse((env.root(workspace)/'tools').exists())

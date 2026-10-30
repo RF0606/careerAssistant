@@ -28,6 +28,8 @@ evidence is retained in [VALIDATION_HISTORY.md](VALIDATION_HISTORY.md).
 Windows Python 3.13.1: **177 Python tests passed**, including **58 environment
 tests** and the previous application-artifact, duplicate, role recovery and private
 maintenance regressions. **21 fictional Chromium browser scenarios passed.**
+Windows executable checks compare file identity so short (8.3) and full path names
+for the same file are accepted while Chinese directory names remain intact.
 
 A real Windows PowerShell 5 first-use run hid Python/Node/Tectonic from PATH and
 forced GBK output in a Chinese directory. It installed and verified private
